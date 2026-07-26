@@ -1,0 +1,21 @@
+@layout("/common/_container.html"){
+<div class="ibox float-e-margins"><div class="ibox-content"><div class="form-horizontal">
+<div class="row"><div class="col-sm-6 b-r">
+<#input id="patientName" name="姓名" underline="true"/>
+<#input id="patientIdcard" name="身份证号" underline="true"/>
+<#input id="vaccineName" name="疫苗名称" underline="true"/>
+<#input id="doseSeq" name="剂次" underline="true"/>
+</div><div class="col-sm-6">
+<#input id="vaccDate" name="接种日期" type="date" underline="true"/>
+<#input id="vaccSite" name="接种部位" underline="true"/>
+<#input id="batchNo" name="批号" underline="true"/>
+<#input id="manufacturer" name="生产企业" underline="true"/>
+</div></div>
+<div class="row"><div class="col-sm-12"><#input id="remark" name="备注"/></div></div>
+<div class="row btn-group-m-t"><div class="col-sm-10">
+<#button btnCss="info" name="提交" icon="fa-check" clickFun="Vaccination.submitAdd()"/>
+<#button btnCss="danger" name="取消" icon="fa-eraser" clickFun="Vaccination.close()"/>
+</div></div>
+</div></div></div>
+<script src="${ctxPath}/static/modular/public_health/vaccination.js"></script>
+@}

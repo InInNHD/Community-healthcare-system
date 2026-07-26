@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fffde7"/>
+      <stop offset="100%" style="stop-color:#fff9c4"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="20" fill="url(#bg)"/>
+  <rect x="40" y="28" width="40" height="55" rx="20" fill="#f9a825" opacity="0.9"/>
+  <rect x="40" y="28" width="40" height="55" rx="20" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.3"/>
+  <line x1="60" y1="35" x2="60" y2="76" stroke="#fff" stroke-width="2" opacity="0.4"/>
+  <rect x="48" y="22" width="24" height="10" rx="5" fill="#f57f17"/>
+  <text x="60" y="105" text-anchor="middle" fill="#f57f17" font-size="11" font-weight="bold" font-family="sans-serif">肠胃用药</text>
+</svg>

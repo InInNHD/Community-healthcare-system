@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>社区医疗服务平台管理系统 - 注册</title>
+
+    <link rel="shortcut icon" href="${ctxPath}/static/favicon.ico">
+    <link href="${ctxPath}/static/css/bootstrap.min.css?v=3.3.6" rel="stylesheet">
+    <link href="${ctxPath}/static/css/font-awesome.css?v=4.4.0" rel="stylesheet">
+    <script>if (window.top !== window.self) {
+        window.top.location = window.location;
+    }</script>
+    <script src="${ctxPath}/static/js/jquery.min.js?v=2.1.4"></script>
+    <script src="${ctxPath}/static/js/bootstrap.min.js?v=3.3.6"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        }
+        .register-wrapper {
+            max-width: 520px;
+            margin: 0 auto;
+            padding-top: 40px;
+            padding-bottom: 40px;
+        }
+        .register-header {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 24px;
+        }
+        .register-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .register-header p {
+            font-size: 15px;
+            opacity: 0.9;
+        }
+        .role-cards {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 22px;
+        }
+        .role-card {
+            flex: 1;
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .role-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        .role-card.active {
+            border-color: #4a90e2;
+            box-shadow: 0 8px 25px rgba(74,144,226,0.3);
+        }
+        .role-card .role-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-size: 22px;
+            color: #fff;
+        }
+        .role-card.doctor .role-icon {
+            background: linear-gradient(135deg, #1a9bfc, #0d6efd);
+        }
+        .role-card.patient .role-icon {
+            background: linear-gradient(135deg, #36d1dc, #5b86e5);
+        }
+        .role-card .role-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        .role-card .role-desc {
+            font-size: 12px;
+            color: #999;
+        }
+        .register-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 28px 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .register-box .form-control {
+            height: 42px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .register-box .btn-register {
+            height: 44px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            letter-spacing: 4px;
+        }
+        .register-box .btn-register:hover {
+            background: linear-gradient(135deg, #5a6fd6, #6a4292);
+        }
+        .register-box .btn-register:disabled {
+            background: #ccc;
+            letter-spacing: 2px;
+        }
+        .form-group label {
+            font-weight: 500;
+            color: #555;
+            font-size: 14px;
+        }
+        .required-star {
+            color: #e74c3c;
+            margin-left: 2px;
+        }
+        .back-to-login {
+            text-align: center;
+            margin-top: 16px;
+        }
+        .back-to-login a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .back-to-login a:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+        .error-msg {
+            color: #e74c3c;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+            display: none;
+        }
+        .select-placeholder {
+            color: #999;
+        }
+        \@media (max-width: 520px) {
+            .register-wrapper {
+                padding: 20px 15px;
+            }
+            .role-cards {
+                gap: 8px;
+            }
+            .role-card {
+                padding: 14px 6px;
+            }
+            .role-card .role-icon {
+                width: 42px;
+                height: 42px;
+                font-size: 18px;
+            }
+            .role-card .role-title {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="register-wrapper">
+    <!-- 标题 -->
+    <div class="register-header">
+        <h1>社区医疗服务平台管理系统</h1>
+        <p>请选择注册身份并填写信息</p>
+    </div>
+
+    <!-- 角色选择卡片 -->
+    <div class="role-cards">
+        <div class="role-card doctor" onclick="selectRole('doctor', this)" title="医护端">
+            <div class="role-icon"><i class="fa fa-stethoscope"></i></div>
+            <div class="role-title">医护端</div>
+            <div class="role-desc">医生工作台</div>
+        </div>
+        <div class="role-card patient" onclick="selectRole('patient', this)" title="居民端">
+            <div class="role-icon"><i class="fa fa-user"></i></div>
+            <div class="role-title">居民端</div>
+            <div class="role-desc">健康服务</div>
+        </div>
+    </div>
+
+    <!-- 注册表单 -->
+    <div class="register-box">
+        <div id="errorMsg" class="error-msg"></div>
+
+        <!-- 未选择角色提示 -->
+        <div id="noRoleTip" style="text-align:center;color:#999;padding:20px 0;">
+            <i class="fa fa-hand-pointer-o" style="font-size:32px;margin-bottom:10px;display:block;"></i>
+            请先选择注册身份
+        </div>
+
+        <!-- 医生注册表单 -->
+        <form id="doctorForm" style="display:none;" onsubmit="return false;">
+            <div class="form-group">
+                <label>账号<span class="required-star">*</span></label>
+                <input type="text" id="doctorAccount" class="form-control" placeholder="请输入登录账号" maxlength="45">
+            </div>
+            <div class="form-group">
+                <label>密码<span class="required-star">*</span></label>
+                <input type="password" id="doctorPassword" class="form-control" placeholder="请输入密码" maxlength="45">
+            </div>
+            <div class="form-group">
+                <label>确认密码<span class="required-star">*</span></label>
+                <input type="password" id="doctorConfirmPassword" class="form-control" placeholder="请再次输入密码" maxlength="45">
+            </div>
+            <div class="form-group">
+                <label>姓名<span class="required-star">*</span></label>
+                <input type="text" id="doctorName" class="form-control" placeholder="请输入真实姓名" maxlength="45">
+            </div>
+            <div class="form-group">
+                <label>科室</label>
+                <select id="doctorDepartment" class="form-control">
+                    <option value="">请选择科室</option>
+                    <option value="内科">内科</option>
+                    <option value="外科">外科</option>
+                    <option value="儿科">儿科</option>
+                    <option value="妇产科">妇产科</option>
+                    <option value="骨科">骨科</option>
+                    <option value="眼科">眼科</option>
+                    <option value="口腔科">口腔科</option>
+                    <option value="皮肤科">皮肤科</option>
+                    <option value="中医科">中医科</option>
+                    <option value="神经内科">神经内科</option>
+                    <option value="心血管内科">心血管内科</option>
+                    <option value="呼吸内科">呼吸内科</option>
+                    <option value="消化内科">消化内科</option>
+                    <option value="急诊科">急诊科</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>职称</label>
+                <select id="doctorTitle" class="form-control">
+                    <option value="">请选择职称</option>
+                    <option value="住院医师">住院医师</option>
+                    <option value="主治医师">主治医师</option>
+                    <option value="副主任医师">副主任医师</option>
+                    <option value="主任医师">主任医师</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>联系电话</label>
+                <input type="text" id="doctorPhone" class="form-control" placeholder="请输入手机号" maxlength="11">
+            </div>
+            <button type="button" class="btn btn-primary btn-register block full-width" onclick="submitDoctorRegister()">注 册</button>
+        </form>
+
+        <!-- 居民注册表单 -->
+        <form id="patientForm" style="display:none;" onsubmit="return false;">
+            <div class="form-group">
+                <label>账号<span class="required-star">*</span></label>
+                <input type="text" id="patientAccount" class="form-control" placeholder="请输入登录账号" maxlength="45">
+            </div>
+            <div class="form-group">
+                <label>密码<span class="required-star">*</span></label>
+                <input type="password" id="patientPassword" class="form-control" placeholder="请输入密码" maxlength="45">
+            </div>
+            <div class="form-group">
+                <label>确认密码<span class="required-star">*</span></label>
+                <input type="password" id="patientConfirmPassword" class="form-control" placeholder="请再次输入密码" maxlength="45">
+            </div>
+            <div class="form-group">
+                <label>姓名<span class="required-star">*</span></label>
+                <input type="text" id="patientName" class="form-control" placeholder="请输入真实姓名" maxlength="45">
+            </div>
+            <div class="form-group">
+                <label>身份证号<span class="required-star">*</span></label>
+                <input type="text" id="patientIdcard" class="form-control" placeholder="请输入18位身份证号" maxlength="18">
+            </div>
+            <div class="form-group">
+                <label>联系电话</label>
+                <input type="text" id="patientPhone" class="form-control" placeholder="请输入手机号" maxlength="11">
+            </div>
+            <button type="button" class="btn btn-primary btn-register block full-width" onclick="submitPatientRegister()">注 册</button>
+        </form>
+    </div>
+
+    <!-- 返回登录 -->
+    <div class="back-to-login">
+        <a href="${ctxPath}/login"><i class="fa fa-arrow-left"></i> 已有账号？返回登录</a>
+    </div>
+</div>
+
+<script>
+    var currentRole = '';
+
+    function selectRole(role, el) {
+        currentRole = role;
+        // 高亮选中卡片
+        document.querySelectorAll('.role-card').forEach(function(card) {
+            card.classList.remove('active');
+        });
+        el.classList.add('active');
+        // 切换表单
+        document.getElementById('noRoleTip').style.display = 'none';
+        if (role === 'doctor') {
+            document.getElementById('doctorForm').style.display = 'block';
+            document.getElementById('patientForm').style.display = 'none';
+        } else {
+            document.getElementById('doctorForm').style.display = 'none';
+            document.getElementById('patientForm').style.display = 'block';
+        }
+        hideError();
+    }
+
+    function showError(msg) {
+        var el = document.getElementById('errorMsg');
+        el.textContent = msg;
+        el.style.display = 'block';
+    }
+
+    function hideError() {
+        document.getElementById('errorMsg').style.display = 'none';
+    }
+
+    function setBtnLoading(btn, loading) {
+        if (loading) {
+            btn.disabled = true;
+            btn.dataset.origText = btn.textContent;
+            btn.textContent = '注册中...';
+        } else {
+            btn.disabled = false;
+            btn.textContent = btn.dataset.origText || '注 册';
+        }
+    }
+
+    function submitDoctorRegister() {
+        hideError();
+        var account = $('#doctorAccount').val().trim();
+        var password = $('#doctorPassword').val().trim();
+        var confirmPassword = $('#doctorConfirmPassword').val().trim();
+        var name = $('#doctorName').val().trim();
+        var department = $('#doctorDepartment').val();
+        var title = $('#doctorTitle').val();
+        var phone = $('#doctorPhone').val().trim();
+
+        if (!account || !password || !name) {
+            showError('账号、密码和姓名为必填项');
+            return;
+        }
+        if (password.length < 6) {
+            showError('密码长度不能少于6位');
+            return;
+        }
+        if (password !== confirmPassword) {
+            showError('两次输入的密码不一致');
+            return;
+        }
+
+        var btn = event.target;
+        setBtnLoading(btn, true);
+
+        $.ajax({
+            url: '${ctxPath}/register/doctor',
+            type: 'POST',
+            data: {
+                account: account,
+                password: password,
+                confirmPassword: confirmPassword,
+                name: name,
+                department: department,
+                title: title,
+                phone: phone
+            },
+            dataType: 'json',
+            success: function(res) {
+                setBtnLoading(btn, false);
+                if (res.success) {
+                    alert('注册成功！即将跳转到登录页面');
+                    window.location.href = '${ctxPath}/login';
+                } else {
+                    showError(res.message || '注册失败');
+                }
+            },
+            error: function() {
+                setBtnLoading(btn, false);
+                showError('网络错误，请稍后重试');
+            }
+        });
+    }
+
+    function submitPatientRegister() {
+        hideError();
+        var account = $('#patientAccount').val().trim();
+        var password = $('#patientPassword').val().trim();
+        var confirmPassword = $('#patientConfirmPassword').val().trim();
+        var name = $('#patientName').val().trim();
+        var idcard = $('#patientIdcard').val().trim();
+        var phone = $('#patientPhone').val().trim();
+
+        if (!account || !password || !name) {
+            showError('账号、密码和姓名为必填项');
+            return;
+        }
+        if (!idcard) {
+            showError('身份证号为必填项');
+            return;
+        }
+        if (idcard.length !== 18) {
+            showError('请输入18位身份证号');
+            return;
+        }
+        if (password.length < 6) {
+            showError('密码长度不能少于6位');
+            return;
+        }
+        if (password !== confirmPassword) {
+            showError('两次输入的密码不一致');
+            return;
+        }
+
+        var btn = event.target;
+        setBtnLoading(btn, true);
+
+        $.ajax({
+            url: '${ctxPath}/register/patient',
+            type: 'POST',
+            data: {
+                account: account,
+                password: password,
+                confirmPassword: confirmPassword,
+                name: name,
+                idcard: idcard,
+                phone: phone
+            },
+            dataType: 'json',
+            success: function(res) {
+                setBtnLoading(btn, false);
+                if (res.success) {
+                    alert('注册成功！即将跳转到登录页面');
+                    window.location.href = '${ctxPath}/login';
+                } else {
+                    showError(res.message || '注册失败');
+                }
+            },
+            error: function() {
+                setBtnLoading(btn, false);
+                showError('网络错误，请稍后重试');
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

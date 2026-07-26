@@ -1,0 +1,47 @@
+@layout("/common/_container.html"){
+<div class="ibox float-e-margins">
+    <div class="ibox-content">
+        <div class="form-horizontal" id="chronicEditForm">
+            <input type="hidden" id="id" value="${item.id}">
+
+            <div class="row">
+                <div class="col-sm-6 b-r">
+                    <#input id="patientName" name="患者姓名" value="${item.patientName}" underline="true"/>
+                    <#input id="patientIdcard" name="身份证号" value="${item.patientIdcard}" underline="true"/>
+                    <#select id="diseaseType" name="慢病类型" underline="true">
+                        <option value="高血压" ${item.diseaseType == '高血压' ? 'selected' : ''}>高血压</option>
+                        <option value="糖尿病" ${item.diseaseType == '糖尿病' ? 'selected' : ''}>糖尿病</option>
+                        <option value="冠心病" ${item.diseaseType == '冠心病' ? 'selected' : ''}>冠心病</option>
+                        <option value="脑卒中" ${item.diseaseType == '脑卒中' ? 'selected' : ''}>脑卒中</option>
+                        <option value="慢阻肺" ${item.diseaseType == '慢阻肺' ? 'selected' : ''}>慢阻肺</option>
+                        <option value="慢性肾病" ${item.diseaseType == '慢性肾病' ? 'selected' : ''}>慢性肾病</option>
+                    </#select>
+                    <#select id="riskLevel" name="风险等级" underline="true">
+                        <option value="低风险" ${item.riskLevel == '低风险' ? 'selected' : ''}>低风险 - 每3个月随访</option>
+                        <option value="中风险" ${item.riskLevel == '中风险' ? 'selected' : ''}>中风险 - 每1个月随访</option>
+                        <option value="高风险" ${item.riskLevel == '高风险' ? 'selected' : ''}>高风险 - 每2周随访</option>
+                    </#select>
+                </div>
+                <div class="col-sm-6">
+                    <#input id="diagnosisDate" name="确诊日期" type="date" value="${item.diagnosisDate ! ''}" underline="true"/>
+                    <#input id="doctorName" name="管理医生" value="${item.doctorName}" underline="true"/>
+                    <#select id="status" name="管理状态" underline="true">
+                        <option value="1" ${item.status == 1 ? 'selected' : ''}>管理中</option>
+                        <option value="2" ${item.status == 2 ? 'selected' : ''}>已转诊</option>
+                        <option value="3" ${item.status == 3 ? 'selected' : ''}>已结案</option>
+                    </#select>
+                    <#input id="remark" name="备注" value="${item.remark}" underline="true"/>
+                </div>
+            </div>
+
+            <div class="row btn-group-m-t">
+                <div class="col-sm-10">
+                    <#button btnCss="info" name="保存" id="ensure" icon="fa-check" clickFun="ChronicDisease.editSubmit()"/>
+                    <#button btnCss="danger" name="取消" id="cancel" icon="fa-eraser" clickFun="ChronicDisease.close()"/>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="${ctxPath}/static/modular/chronic_disease/chronicDisease/chronicDisease.js"></script>
+@}

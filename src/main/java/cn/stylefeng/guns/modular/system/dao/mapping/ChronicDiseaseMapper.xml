@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.stylefeng.guns.modular.system.dao.ChronicDiseaseMapper">
+
+    <resultMap id="BaseResultMap" type="cn.stylefeng.guns.modular.system.model.ChronicDisease">
+        <id column="id" property="id" />
+        <result column="patient_idcard" property="patientIdcard" />
+        <result column="patient_name" property="patientName" />
+        <result column="disease_type" property="diseaseType" />
+        <result column="risk_level" property="riskLevel" />
+        <result column="diagnosis_date" property="diagnosisDate" />
+        <result column="doctor_name" property="doctorName" />
+        <result column="status" property="status" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+        <result column="remark" property="remark" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, patient_idcard, patient_name, disease_type, risk_level, diagnosis_date,
+        doctor_name, status, create_time, update_time, remark
+    </sql>
+
+</mapper>

@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员端 - 社区医疗服务平台管理系统</title>
+    <link rel="shortcut icon" href="${ctxPath}/static/favicon.ico">
+    <link href="${ctxPath}/static/css/bootstrap.min.css?v=3.3.6" rel="stylesheet">
+    <link href="${ctxPath}/static/css/font-awesome.min.css?v=4.4.0" rel="stylesheet">
+    <link href="${ctxPath}/static/css/portal.css" rel="stylesheet">
+    <script src="${ctxPath}/static/js/jquery.min.js?v=2.1.4"></script>
+    <script src="${ctxPath}/static/js/bootstrap.min.js?v=3.3.6"></script>
+    <script src="${ctxPath}/static/js/plugins/layer/layer.js"></script>
+    <script src="${ctxPath}/static/js/common/Feng.js"></script>
+</head>
+<body class="portal-body">
+
+<!-- 顶部导航栏 -->
+<nav class="navbar navbar-default portal-navbar admin-theme">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#adminNavbar">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="${ctxPath}/admin_portal">
+                <i class="fa fa-shield brand-icon"></i>管理员工作台
+            </a>
+        </div>
+        <div class="collapse navbar-collapse" id="adminNavbar">
+            <ul class="nav navbar-nav">
+                <li class="active"><a href="#" onclick="AdminPortal.switchTab('dashboard')"><i class="fa fa-tachometer"></i> 工作台</a></li>
+                <li><a href="#" onclick="AdminPortal.switchTab('appointment')"><i class="fa fa-calendar-check-o"></i> 预约管理</a></li>
+                <li><a href="#" onclick="AdminPortal.switchTab('medicine')"><i class="fa fa-medkit"></i> 药品管理</a></li>
+                <li><a href="#" onclick="AdminPortal.switchTab('health')"><i class="fa fa-heartbeat"></i> 健康档案</a></li>
+                <li><a href="#" onclick="AdminPortal.switchTab('history')"><i class="fa fa-file-text-o"></i> 就诊记录</a></li>
+                <li><a href="#" onclick="AdminPortal.switchTab('system')"><i class="fa fa-cog"></i> 系统管理</a></li>
+                <li><a href="#" onclick="AdminPortal.switchTab('userinfo')"><i class="fa fa-address-card"></i> 用户信息</a></li>
+                <li><a href="#" onclick="AdminPortal.switchTab('chronic')"><i class="fa fa-heartbeat"></i> 慢病管理</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li><span class="user-info"><i class="fa fa-user"></i>${userName!} | ${userRole!}</span></li>
+                <li><a href="${ctxPath}/logout"><i class="fa fa-sign-out"></i> 退出</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- 主内容区 -->
+<div class="container-fluid" style="padding: 20px 25px;">
+
+    <!-- ===== 工作台面板 ===== -->
+    <div id="panel-dashboard">
+        <!-- 统计卡片 -->
+        <div class="row">
+            <div class="col-sm-3">
+                <div class="stat-card">
+                    <div class="stat-icon teal"><i class="fa fa-users"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number">${patientCount!0}</div>
+                        <div class="stat-label">居民总数</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card">
+                    <div class="stat-icon blue"><i class="fa fa-user-md"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number">${doctorCount!0}</div>
+                        <div class="stat-label">医生总数</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card">
+                    <div class="stat-icon orange"><i class="fa fa-calendar-check-o"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number">${appointmentCount!0}</div>
+                        <div class="stat-label">预约总数</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card">
+                    <div class="stat-icon purple"><i class="fa fa-medkit"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number">${medicineCount!0}</div>
+                        <div class="stat-label">药品总数</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 公共卫生概览 -->
+        <div class="row">
+            <div class="col-sm-2">
+                <div class="stat-card stat-sm"><div class="stat-icon blue"><i class="fa fa-syringe"></i></div><div class="stat-info"><div class="stat-number" id="phVaccCount">-</div><div class="stat-label">预防接种</div></div></div>
+            </div>
+            <div class="col-sm-2">
+                <div class="stat-card stat-sm"><div class="stat-icon pink"><i class="fa fa-female"></i></div><div class="stat-info"><div class="stat-number" id="phMaternalCount">-</div><div class="stat-label">孕产妇</div></div></div>
+            </div>
+            <div class="col-sm-2">
+                <div class="stat-card stat-sm"><div class="stat-icon green"><i class="fa fa-user-md"></i></div><div class="stat-info"><div class="stat-number" id="phElderlyCount">-</div><div class="stat-label">老年体检</div></div></div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card stat-sm"><div class="stat-icon red"><i class="fa fa-bug"></i></div><div class="stat-info"><div class="stat-number" id="phInfectCount">-</div><div class="stat-label">传染病报告</div></div></div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card stat-sm"><div class="stat-icon orange"><i class="fa fa-clock-o"></i></div><div class="stat-info"><div class="stat-number" id="phPendingCount">-</div><div class="stat-label">待审核</div></div></div>
+            </div>
+        </div>
+
+        <!-- 快捷入口 + 最近预约 -->
+        <div class="row">
+            <div class="col-sm-4">
+                <div class="portal-card">
+                    <div class="card-header">
+                        <h4><i class="fa fa-rocket"></i>快捷入口</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-xs-6" style="margin-bottom:10px;">
+                                <button class="btn btn-primary btn-block" onclick="AdminPortal.switchTab('appointment')">
+                                    <i class="fa fa-calendar-check-o"></i> 预约管理
+                                </button>
+                            </div>
+                            <div class="col-xs-6" style="margin-bottom:10px;">
+                                <button class="btn btn-success btn-block" onclick="AdminPortal.switchTab('medicine')">
+                                    <i class="fa fa-medkit"></i> 药品管理
+                                </button>
+                            </div>
+                            <div class="col-xs-6" style="margin-bottom:10px;">
+                                <button class="btn btn-warning btn-block" onclick="AdminPortal.switchTab('system')">
+                                    <i class="fa fa-cog"></i> 系统管理
+                                </button>
+                            </div>
+                            <div class="col-xs-6" style="margin-bottom:10px;">
+                                <button class="btn btn-info btn-block" onclick="AdminPortal.switchTab('userinfo')">
+                                    <i class="fa fa-address-card"></i> 用户信息
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-8">
+                <div class="portal-card">
+                    <div class="card-header">
+                        <h4><i class="fa fa-calendar"></i>最近预约</h4>
+                    </div>
+                    <div class="card-body">
+                        <table class="portal-table">
+                            <thead>
+                                <tr>
+                                    <th>患者姓名</th>
+                                    <th>接诊医生</th>
+                                    <th>预约时间</th>
+                                    <th>预约地点</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboardAppointments">
+                                <tr><td colspan="4" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 预约管理面板 ===== -->
+    <div id="panel-appointment" style="display:none;">
+        <!-- 预约统计卡片 -->
+        <div class="row" style="margin-bottom:15px;">
+            <div class="col-sm-3">
+                <div class="stat-card" style="padding:12px 15px;">
+                    <div class="stat-info">
+                        <div class="stat-number" id="aptTotalCount">0</div>
+                        <div class="stat-label">预约总数</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card" style="padding:12px 15px;">
+                    <div class="stat-icon" style="background:#3498db;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;"><i class="fa fa-clock-o"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="aptWaitingCount">0</div>
+                        <div class="stat-label">待参与</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card" style="padding:12px 15px;">
+                    <div class="stat-icon" style="background:#27ae60;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;"><i class="fa fa-check"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="aptCompletedCount">0</div>
+                        <div class="stat-label">已完成</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card" style="padding:12px 15px;">
+                    <div class="stat-icon" style="background:#e67e22;color:#fff;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;"><i class="fa fa-stethoscope"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="aptInProgressCount">0</div>
+                        <div class="stat-label">就诊中</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 筛选区 -->
+        <div class="portal-card" style="margin-bottom:15px;padding:12px 15px;">
+            <div class="row">
+                <div class="col-sm-3">
+                    <select id="aptStatusFilter" class="form-control" onchange="AdminPortal.loadAppointmentList()">
+                        <option value="">全部状态</option>
+                        <option value="0">待参与</option>
+                        <option value="1">已完成</option>
+                        <option value="2">已逾期</option>
+                        <option value="3">就诊中</option>
+                    </select>
+                </div>
+                <div class="col-sm-3">
+                    <input type="text" id="aptDoctorFilter" class="form-control" placeholder="按医生姓名筛选" onkeyup="AdminPortal.loadAppointmentList()">
+                </div>
+                <div class="col-sm-3">
+                    <input type="text" id="aptPatientFilter" class="form-control" placeholder="按患者姓名筛选" onkeyup="AdminPortal.loadAppointmentList()">
+                </div>
+                <div class="col-sm-3">
+                    <button class="btn btn-default" onclick="AdminPortal.loadAppointmentList()"><i class="fa fa-refresh"></i> 刷新</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 预约列表 -->
+        <div class="portal-card">
+            <table class="portal-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>患者姓名</th>
+                        <th>身份证号</th>
+                        <th>接诊医生</th>
+                        <th>预约时间</th>
+                        <th>预约地点</th>
+                        <th>状态</th>
+                        <th>来源</th>
+                    </tr>
+                </thead>
+                <tbody id="appointmentList">
+                    <tr><td colspan="8" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== 药品管理面板 ===== -->
+    <div id="panel-medicine" style="display:none;">
+        <div class="portal-card" style="padding:0;overflow:hidden;">
+            <iframe id="iframe-medicine" src="" style="width:100%;border:none;min-height:600px;" onload="AdminPortal.resizeIframe(this)"></iframe>
+        </div>
+    </div>
+
+    <!-- ===== 健康档案面板 ===== -->
+    <div id="panel-health" style="display:none;">
+        <div class="portal-card" style="padding:0;overflow:hidden;">
+            <iframe id="iframe-health" src="" style="width:100%;border:none;min-height:600px;" onload="AdminPortal.resizeIframe(this)"></iframe>
+        </div>
+    </div>
+
+    <!-- ===== 就诊记录面板 ===== -->
+    <div id="panel-history" style="display:none;">
+        <div class="portal-card" style="padding:0;overflow:hidden;">
+            <iframe id="iframe-history" src="" style="width:100%;border:none;min-height:600px;" onload="AdminPortal.resizeIframe(this)"></iframe>
+        </div>
+    </div>
+
+    <!-- ===== 系统管理面板 ===== -->
+    <div id="panel-system" style="display:none;">
+        <div class="portal-tabs">
+            <ul class="nav nav-tabs" id="systemTabs">
+                <li class="active"><a href="#" onclick="AdminPortal.switchSystemTab('user')"><i class="fa fa-user"></i> 用户管理</a></li>
+                <li><a href="#" onclick="AdminPortal.switchSystemTab('role')"><i class="fa fa-users"></i> 角色管理</a></li>
+                <li><a href="#" onclick="AdminPortal.switchSystemTab('dept')"><i class="fa fa-sitemap"></i> 部门管理</a></li>
+                <li><a href="#" onclick="AdminPortal.switchSystemTab('menu')"><i class="fa fa-bars"></i> 菜单管理</a></li>
+                <li><a href="#" onclick="AdminPortal.switchSystemTab('dict')"><i class="fa fa-book"></i> 字典管理</a></li>
+                <li><a href="#" onclick="AdminPortal.switchSystemTab('log')"><i class="fa fa-list-alt"></i> 业务日志</a></li>
+                <li><a href="#" onclick="AdminPortal.switchSystemTab('loginLog')"><i class="fa fa-sign-in"></i> 登录日志</a></li>
+                <li><a href="#" onclick="AdminPortal.switchSystemTab('notice')"><i class="fa fa-bullhorn"></i> 通知管理</a></li>
+            </ul>
+        </div>
+        <div class="portal-card" style="padding:0;overflow:hidden;">
+            <iframe id="iframe-system" src="" style="width:100%;border:none;min-height:600px;" onload="AdminPortal.resizeIframe(this)"></iframe>
+        </div>
+    </div>
+
+    <!-- ===== 用户信息面板 ===== -->
+    <div id="panel-userinfo" style="display:none;">
+        <div class="portal-tabs">
+            <ul class="nav nav-tabs" id="userinfoTabs">
+                <li class="active"><a href="#" onclick="AdminPortal.switchUserinfoTab('doctor')"><i class="fa fa-user-md"></i> 医护人员</a></li>
+                <li><a href="#" onclick="AdminPortal.switchUserinfoTab('patient')"><i class="fa fa-users"></i> 居民用户</a></li>
+            </ul>
+        </div>
+
+        <!-- 医护人员信息 -->
+        <div id="userinfo-doctor" class="portal-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                <h4 style="margin:0;"><i class="fa fa-user-md"></i> 医护人员账号信息</h4>
+                <button class="btn btn-primary" onclick="AdminPortal.syncDoctors()">
+                    <i class="fa fa-refresh"></i> 一键同步未注册医生
+                </button>
+            </div>
+            <div style="margin-bottom:10px;color:#888;font-size:13px;">
+                <i class="fa fa-info-circle"></i> 点击"一键同步"可为所有未注册账号的医生自动生成登录账号（默认密码：111111），同步后医生即可通过账号登录医护端。
+            </div>
+            <table class="portal-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>姓名</th>
+                        <th>科室</th>
+                        <th>职称</th>
+                        <th>擅长</th>
+                        <th>状态</th>
+                        <th>登录账号</th>
+                        <th>联系电话</th>
+                        <th>账号状态</th>
+                    </tr>
+                </thead>
+                <tbody id="doctorInfoList">
+                    <tr><td colspan="9" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 居民用户信息 -->
+        <div id="userinfo-patient" class="portal-card" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+                <h4 style="margin:0;"><i class="fa fa-users"></i> 居民账号信息</h4>
+                <button class="btn btn-primary" onclick="AdminPortal.syncPatients()">
+                    <i class="fa fa-refresh"></i> 一键同步未注册居民
+                </button>
+            </div>
+            <div style="margin-bottom:10px;color:#888;font-size:13px;">
+                <i class="fa fa-info-circle"></i> 点击"一键同步"可为所有未注册账号的居民自动生成登录账号（默认密码：111111），同步后居民即可通过账号登录居民端。
+            </div>
+            <table class="portal-table">
+                <thead>
+                    <tr>
+                        <th>身份证号</th>
+                        <th>姓名</th>
+                        <th>余额</th>
+                        <th>登录账号</th>
+                        <th>联系电话</th>
+                        <th>账号状态</th>
+                    </tr>
+                </thead>
+                <tbody id="patientInfoList">
+                    <tr><td colspan="6" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== 慢病管理面板 ===== -->
+    <div id="panel-chronic" style="display:none;">
+        <!-- 慢病统计卡片 -->
+        <div class="row" style="margin-bottom:15px;">
+            <div class="col-sm-2">
+                <div class="stat-card" style="padding:12px 10px;">
+                    <div class="stat-info">
+                        <div class="stat-number" id="adminChronicTotal">0</div>
+                        <div class="stat-label">管理总数</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-2">
+                <div class="stat-card" style="padding:12px 10px;border-left:4px solid #27ae60;">
+                    <div class="stat-info">
+                        <div class="stat-number" id="adminChronicLow">0</div>
+                        <div class="stat-label" style="color:#27ae60;">低风险</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-2">
+                <div class="stat-card" style="padding:12px 10px;border-left:4px solid #f39c12;">
+                    <div class="stat-info">
+                        <div class="stat-number" id="adminChronicMid">0</div>
+                        <div class="stat-label" style="color:#f39c12;">中风险</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-2">
+                <div class="stat-card" style="padding:12px 10px;border-left:4px solid #e74c3c;">
+                    <div class="stat-info">
+                        <div class="stat-number" id="adminChronicHigh">0</div>
+                        <div class="stat-label" style="color:#e74c3c;">高风险</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-2">
+                <div class="stat-card" style="padding:12px 10px;border-left:4px solid #3498db;">
+                    <div class="stat-info">
+                        <div class="stat-number" id="adminChronicPending">0</div>
+                        <div class="stat-label" style="color:#3498db;">待随访</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-2">
+                <div class="stat-card" style="padding:12px 10px;border-left:4px solid #8e44ad;">
+                    <div class="stat-info">
+                        <div class="stat-number">6</div>
+                        <div class="stat-label" style="color:#8e44ad;">病种数</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 筛选区 -->
+        <div class="portal-card" style="margin-bottom:15px;padding:12px 15px;">
+            <div class="row">
+                <div class="col-sm-3">
+                    <select id="adminChronicDiseaseFilter" class="form-control" onchange="AdminPortal.loadChronicList()">
+                        <option value="">全部病种</option>
+                        <option value="高血压">高血压</option>
+                        <option value="糖尿病">糖尿病</option>
+                        <option value="冠心病">冠心病</option>
+                        <option value="脑卒中">脑卒中</option>
+                        <option value="慢阻肺">慢阻肺</option>
+                        <option value="慢性肾病">慢性肾病</option>
+                    </select>
+                </div>
+                <div class="col-sm-3">
+                    <select id="adminChronicRiskFilter" class="form-control" onchange="AdminPortal.loadChronicList()">
+                        <option value="">全部风险</option>
+                        <option value="低风险">低风险</option>
+                        <option value="中风险">中风险</option>
+                        <option value="高风险">高风险</option>
+                    </select>
+                </div>
+                <div class="col-sm-3">
+                    <input type="text" id="adminChronicNameFilter" class="form-control" placeholder="按患者姓名搜索" onkeyup="AdminPortal.loadChronicList()">
+                </div>
+                <div class="col-sm-3">
+                    <button class="btn btn-default" onclick="AdminPortal.loadChronicList()"><i class="fa fa-refresh"></i> 刷新</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 慢病档案列表 -->
+        <div class="portal-card">
+            <div class="card-header">
+                <h4><i class="fa fa-heartbeat"></i>慢病档案总览</h4>
+            </div>
+            <div class="card-body">
+                <table class="portal-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>患者姓名</th>
+                            <th>身份证号</th>
+                            <th>慢病类型</th>
+                            <th>风险等级</th>
+                            <th>确诊日期</th>
+                            <th>管理医生</th>
+                            <th>状态</th>
+                            <th>备注</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminChronicTable">
+                        <tr><td colspan="9" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- 页脚 -->
+<footer style="text-align:center;padding:20px;color:#bbb;font-size:12px;background:#f3f6fb;">
+    社区医疗服务平台管理系统 - 管理员端&copy; 2026
+</footer>
+
+<script src="${ctxPath}/static/modular/admin_portal/admin_portal.js"></script>
+<script>
+    $(function(){
+        AdminPortal.init();
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.stylefeng.guns.modular.system.dao.DoctorInfoMapper">
+
+    <resultMap id="BaseResultMap" type="cn.stylefeng.guns.modular.system.model.DoctorInfo">
+        <id column="id" property="id" />
+        <result column="doctor_name" property="doctorName" />
+        <result column="department" property="department" />
+        <result column="title" property="title" />
+        <result column="specialty" property="specialty" />
+        <result column="work_days" property="workDays" />
+        <result column="work_time_start" property="workTimeStart" />
+        <result column="work_time_end" property="workTimeEnd" />
+        <result column="office" property="office" />
+        <result column="image" property="image" />
+        <result column="status" property="status" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, doctor_name, department, title, specialty, work_days, work_time_start, work_time_end, office, image, status
+    </sql>
+
+</mapper>

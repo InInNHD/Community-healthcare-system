@@ -1,0 +1,19 @@
+@layout("/common/_container.html"){
+<div class="row">
+    <div class="col-sm-3"><div class="ibox float-e-margins"><div class="ibox-title"><span class="label label-info pull-right">累计</span><h5>体检人次</h5></div><div class="ibox-content"><h1 class="no-margins" id="totalCheckups">-</h1></div></div></div>
+    <div class="col-sm-3"><div class="ibox float-e-margins"><div class="ibox-title"><span class="label label-warning pull-right">待检</span><h5>本年度未检</h5></div><div class="ibox-content"><h1 class="no-margins" id="dueCount">-</h1></div></div></div>
+</div>
+<div class="row"><div class="col-sm-12"><div class="ibox float-e-margins"><div class="ibox-title"><h5>老年人健康体检(65岁以上)</h5></div>
+<div class="ibox-content"><div class="row row-lg"><div class="col-sm-12">
+<div class="row"><div class="col-sm-3"><#NameCon id="patientName" name="姓名"/></div><div class="col-sm-3"><#button name="搜索" icon="fa-search" clickFun="Elderly.search()"/></div></div>
+<div class="hidden-xs" id="ElderlyTableToolbar" role="group">
+<#button name="新增体检" icon="fa-plus" clickFun="Elderly.openAdd()"/>
+<#button name="编辑" icon="fa-edit" clickFun="Elderly.openEdit()" space="true"/>
+<#button name="删除" icon="fa-remove" clickFun="Elderly.delete()" space="true"/>
+<#button name="年度统计" icon="fa-bar-chart" clickFun="Elderly.viewStats()" space="true"/>
+<#button name="待检提醒" icon="fa-bell" clickFun="Elderly.dueReminders()" space="true"/>
+</div>
+<#table id="ElderlyTable"/>
+</div></div></div></div></div></div>
+<script src="${ctxPath}/static/modular/public_health/elderly.js"></script>
+@}

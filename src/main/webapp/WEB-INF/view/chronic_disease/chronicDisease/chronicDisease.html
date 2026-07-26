@@ -1,0 +1,122 @@
+@layout("/common/_container.html"){
+<div class="row">
+    <!-- 统计卡片区 -->
+    <div class="col-sm-3" style="padding-right:10px;">
+        <div class="ibox float-e-margins">
+            <div class="ibox-title"><span class="label label-info pull-right">管理</span><h5>总管理人数</h5></div>
+            <div class="ibox-content"><h1 class="no-margins" id="totalCount">0</h1><small>在管慢病患者总数</small></div>
+        </div>
+    </div>
+    <div class="col-sm-3" style="padding-right:10px;">
+        <div class="ibox float-e-margins">
+            <div class="ibox-title"><span class="label label-warning pull-right">待办</span><h5>待随访</h5></div>
+            <div class="ibox-content"><h1 class="no-margins" id="pendingPlanCount">0</h1><small>待执行随访计划</small></div>
+        </div>
+    </div>
+    <div class="col-sm-3" style="padding-right:10px;">
+        <div class="ibox float-e-margins">
+            <div class="ibox-title"><span class="label label-danger pull-right">高危</span><h5>高风险患者</h5></div>
+            <div class="ibox-content"><h1 class="no-margins" id="highRiskCount">0</h1><small>需密切关注</small></div>
+        </div>
+    </div>
+    <div class="col-sm-3">
+        <div class="ibox float-e-margins">
+            <div class="ibox-title"><span class="label label-success pull-right">今日</span><h5>今日随访</h5></div>
+            <div class="ibox-content"><h1 class="no-margins" id="todayFollowupCount">0</h1><small>今日计划随访</small></div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- 病种分布 -->
+    <div class="col-sm-4">
+        <div class="ibox float-e-margins">
+            <div class="ibox-title"><h5>病种分布</h5></div>
+            <div class="ibox-content">
+                <table class="table table-striped table-bordered" id="diseaseDistTable">
+                    <thead><tr><th>病种</th><th>人数</th></tr></thead>
+                    <tbody id="diseaseDistBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <!-- 风险等级分布 -->
+    <div class="col-sm-4">
+        <div class="ibox float-e-margins">
+            <div class="ibox-title"><h5>风险等级分布</h5></div>
+            <div class="ibox-content">
+                <table class="table table-striped table-bordered" id="riskDistTable">
+                    <thead><tr><th>风险等级</th><th>人数</th></tr></thead>
+                    <tbody id="riskDistBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <!-- 待随访提醒 -->
+    <div class="col-sm-4">
+        <div class="ibox float-e-margins">
+            <div class="ibox-title"><h5>近期待随访</h5></div>
+            <div class="ibox-content" style="max-height:200px;overflow-y:auto;">
+                <ul class="list-group" id="pendingReminderList"></ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="ibox float-e-margins">
+            <div class="ibox-title"><h5>慢病档案管理</h5></div>
+            <div class="ibox-content">
+                <div class="row row-lg">
+                    <div class="col-sm-12">
+                        <div class="row">
+                            <div class="col-sm-2">
+                                <#select id="filterDiseaseType" name="病种">
+                                    <option value="">全部病种</option>
+                                    <option value="高血压">高血压</option>
+                                    <option value="糖尿病">糖尿病</option>
+                                    <option value="冠心病">冠心病</option>
+                                    <option value="脑卒中">脑卒中</option>
+                                    <option value="慢阻肺">慢阻肺</option>
+                                    <option value="慢性肾病">慢性肾病</option>
+                                </#select>
+                            </div>
+                            <div class="col-sm-2">
+                                <#select id="filterRiskLevel" name="风险等级">
+                                    <option value="">全部等级</option>
+                                    <option value="高风险">高风险</option>
+                                    <option value="中风险">中风险</option>
+                                    <option value="低风险">低风险</option>
+                                </#select>
+                            </div>
+                            <div class="col-sm-2">
+                                <#NameCon id="filterPatientName" name="患者姓名" />
+                            </div>
+                            <div class="col-sm-3">
+                                <#button name="搜索" icon="fa-search" clickFun="ChronicDisease.search()"/>
+                                <#button name="重置" icon="fa-refresh" clickFun="ChronicDisease.resetSearch()" space="true"/>
+                            </div>
+                        </div>
+                        <div class="hidden-xs" id="ChronicDiseaseTableToolbar" role="group">
+                            @if(shiro.hasPermission("/chronicDisease/add")){
+                                <#button name="新建档案" icon="fa-plus" clickFun="ChronicDisease.openAdd()"/>
+                            @}
+                            @if(shiro.hasPermission("/chronicDisease/update")){
+                                <#button name="编辑档案" icon="fa-edit" clickFun="ChronicDisease.openEdit()" space="true"/>
+                            @}
+                            @if(shiro.hasPermission("/chronicDisease/delete")){
+                                <#button name="删除档案" icon="fa-remove" clickFun="ChronicDisease.delete()" space="true"/>
+                            @}
+                            <#button name="新增随访" icon="fa-stethoscope" clickFun="ChronicDisease.openAddFollowup()" space="true"/>
+                            <#button name="查看随访记录" icon="fa-history" clickFun="ChronicDisease.viewFollowups()" space="true"/>
+                        </div>
+                        <#table id="ChronicDiseaseTable"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="${ctxPath}/static/modular/chronic_disease/chronicDisease/chronicDisease.js"></script>
+@}

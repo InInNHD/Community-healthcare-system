@@ -1,0 +1,31 @@
+# Maven
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Local AI/tool configuration
+.claude/
+
+# Logs and JVM crash files
+*.log
+hs_err_pid*
+replay_pid*
+guns-logs/
+
+# Session and cookie files
+*cookies*.txt
+
+# Local configuration and runtime files
+application-local.yml
+.env
+.env.*
+*.pid
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db

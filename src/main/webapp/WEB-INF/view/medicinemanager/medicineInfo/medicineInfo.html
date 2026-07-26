@@ -1,0 +1,57 @@
+@layout("/common/_container.html"){
+<div class="row">
+    <div class="col-sm-12">
+        <div class="ibox float-e-margins">
+            <div class="ibox-title"><h5>药品管理</h5></div>
+            <div class="ibox-content">
+                <div class="row row-lg">
+                    <div class="col-sm-12">
+                        <div class="row">
+                            <div class="col-sm-3">
+                                <#NameCon id="condition" name="名称" />
+                            </div>
+                            <div class="col-sm-3">
+                                <#button name="搜索" icon="fa-search" clickFun="MedicineInfo.search()"/>
+                            </div>
+                        </div>
+                        <div class="hidden-xs" id="MedicineInfoTableToolbar" role="group">
+                            <#button name="添加" icon="fa-plus" clickFun="MedicineInfo.openAddMedicineInfo()"/>
+                            <#button name="修改" icon="fa-edit" clickFun="MedicineInfo.openMedicineInfoDetail()" space="true"/>
+                            <#button name="下架" icon="fa-archive" clickFun="MedicineInfo.delete()" space="true"/>
+                            <#button name="上架" icon="fa-upload" clickFun="MedicineInfo.openRestore()" space="true"/>
+                            <#button name="入库" icon="fa-sign-in" clickFun="MedicineInfo.openStockIn()" space="true"/>
+                            <#button name="出库" icon="fa-sign-out" clickFun="MedicineInfo.openStockOut()" space="true"/>
+                            <#button name="批次" icon="fa-barcode" clickFun="MedicineInfo.viewBatches()" space="true"/>
+                            <#button name="低库存预警" icon="fa-exclamation-triangle" clickFun="MedicineInfo.lowStockAlert()" space="true"/>
+                            <#button name="出入库记录" icon="fa-history" clickFun="MedicineInfo.viewStockLog()" space="true"/>
+                        </div>
+                        <#table id="MedicineInfoTable"/>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 卡片视图 -->
+<div class="row">
+    <div class="col-sm-12">
+        <div class="ibox float-e-margins">
+            <div class="ibox-title"><h5>药品卡片</h5></div>
+            <div class="ibox-content">
+                <div class="row" style="margin-bottom:10px;">
+                    <div class="col-sm-9" id="medicineCategoryBar"></div>
+                    <div class="col-sm-3">
+                        <div class="input-group">
+                            <input class="form-control" id="medicineSearchInput" placeholder="搜索药品..." oninput="MedicineInfo.filterCards()">
+                            <span class="input-group-btn"><button class="btn btn-primary" onclick="MedicineInfo.filterCards()"><i class="fa fa-search"></i></button></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="medicineCardGrid"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="${ctxPath}/static/modular/medicinemanager/medicineInfo/medicineInfo.js"></script>
+@}

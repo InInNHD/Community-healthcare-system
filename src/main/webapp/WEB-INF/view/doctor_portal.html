@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>医护端 - 社区医疗服务平台管理系统</title>
+    <link rel="shortcut icon" href="${ctxPath}/static/favicon.ico">
+    <link href="${ctxPath}/static/css/bootstrap.min.css?v=3.3.6" rel="stylesheet">
+    <link href="${ctxPath}/static/css/font-awesome.min.css?v=4.4.0" rel="stylesheet">
+    <link href="${ctxPath}/static/css/portal.css" rel="stylesheet">
+    <script src="${ctxPath}/static/js/jquery.min.js?v=2.1.4"></script>
+    <script src="${ctxPath}/static/js/bootstrap.min.js?v=3.3.6"></script>
+    <script src="${ctxPath}/static/js/plugins/layer/layer.js"></script>
+    <script src="${ctxPath}/static/js/common/Feng.js"></script>
+</head>
+<body class="portal-body">
+
+<!-- 顶部导航栏 -->
+<nav class="navbar navbar-default portal-navbar doctor-theme">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#doctorNavbar">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="${ctxPath}/doctor_portal">
+                <i class="fa fa-stethoscope brand-icon"></i>医护端工作台
+            </a>
+        </div>
+        <div class="collapse navbar-collapse" id="doctorNavbar">
+            <ul class="nav navbar-nav">
+                <li class="active"><a href="#" onclick="DoctorPortal.switchTab('dashboard')"><i class="fa fa-tachometer"></i> 工作台</a></li>
+                <li><a href="#" onclick="DoctorPortal.switchTab('consultation')"><i class="fa fa-hospital-o"></i> 就诊台</a></li>
+                <li><a href="#" onclick="DoctorPortal.switchTab('appointments')"><i class="fa fa-calendar-check-o"></i> 预约管理</a></li>
+                <li><a href="#" onclick="DoctorPortal.switchTab('health')"><i class="fa fa-heartbeat"></i> 健康监测</a></li>
+                <li><a href="#" onclick="DoctorPortal.switchTab('history')"><i class="fa fa-file-text-o"></i> 就诊记录</a></li>
+                <li><a href="#" onclick="DoctorPortal.switchTab('medicine')"><i class="fa fa-medkit"></i> 药品管理</a></li>
+                <li><a href="#" onclick="DoctorPortal.switchTab('chronic')"><i class="fa fa-heartbeat"></i> 慢病管理</a></li>
+                <li><a href="#" onclick="DoctorPortal.switchTab('public_health')"><i class="fa fa-ambulance"></i> 公共卫生</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li><span class="user-info"><i class="fa fa-user-md"></i>${userName!} | ${userRole!}</span></li>
+                <li><a href="${ctxPath}/logout"><i class="fa fa-sign-out"></i> 退出</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- 主内容区 -->
+<div class="container-fluid" style="padding: 20px 25px;">
+
+    <!-- ===== 工作台面板 ===== -->
+    <div id="panel-dashboard">
+
+        <!-- 第一行：8个统计卡片 -->
+        <div class="row">
+            <div class="col-sm-3">
+                <div class="stat-card clickable" onclick="DoctorPortal.switchTab('appointments')" title="点击查看详情">
+                    <div class="stat-icon blue"><i class="fa fa-calendar-check-o"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="dashTodayAppt">-</div>
+                        <div class="stat-label">今日预约</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card clickable" onclick="DoctorPortal.switchTab('consultation')" title="点击进入就诊台">
+                    <div class="stat-icon orange"><i class="fa fa-clock-o"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="dashWaiting">-</div>
+                        <div class="stat-label">候诊人数</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card clickable" onclick="DoctorPortal.switchTab('consultation')" title="点击进入就诊台">
+                    <div class="stat-icon teal"><i class="fa fa-stethoscope"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="dashInProgress">-</div>
+                        <div class="stat-label">就诊中</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card">
+                    <div class="stat-icon green"><i class="fa fa-check-circle"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="dashTodayDone">-</div>
+                        <div class="stat-label">今日完成</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-3">
+                <div class="stat-card clickable" onclick="DoctorPortal.switchTab('history')" title="点击查看详情">
+                    <div class="stat-icon purple"><i class="fa fa-users"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="dashMyPatients">-</div>
+                        <div class="stat-label">我的患者</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card clickable" onclick="DoctorPortal.switchTab('health')" title="点击查看详情">
+                    <div class="stat-icon blue"><i class="fa fa-heartbeat"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="dashHealthRecords">-</div>
+                        <div class="stat-label">健康档案</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card clickable" onclick="DoctorPortal.switchTab('chronic')" title="点击查看详情">
+                    <div class="stat-icon red"><i class="fa fa-heart"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="dashChronicCount">-</div>
+                        <div class="stat-label">慢病管理 <small id="dashChronicPending" style="color:#e74c3c;"></small></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card clickable" onclick="DoctorPortal.switchTab('medicine')" title="点击查看详情">
+                    <div class="stat-icon teal"><i class="fa fa-medkit"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="dashMedCount">-</div>
+                        <div class="stat-label">药品总数 <small id="dashMedAlert" style="color:#e74c3c;"></small></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第二行：今日排班 + 告警面板 -->
+        <div class="row">
+            <div class="col-sm-8">
+                <div class="portal-card">
+                    <div class="card-header">
+                        <h4><i class="fa fa-calendar"></i>今日预约排班</h4>
+                        <div>
+                            <button class="btn btn-xs btn-success" onclick="DoctorPortal.openAppointmentAdd()"><i class="fa fa-plus"></i> 新建预约</button>
+                            <button class="btn btn-xs btn-default" onclick="DoctorPortal.switchTab('appointments')" style="margin-left:4px;">查看全部</button>
+                        </div>
+                    </div>
+                    <div class="card-body" style="padding:0;">
+                        <table class="portal-table" style="margin-bottom:0;">
+                            <thead>
+                                <tr><th>时间</th><th>患者</th><th>医生</th><th>地点</th><th>状态</th><th width="60">操作</th></tr>
+                            </thead>
+                            <tbody id="dashTodaySchedule">
+                                <tr><td colspan="6" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <!-- 最近就诊记录 -->
+                <div class="portal-card">
+                    <div class="card-header">
+                        <h4><i class="fa fa-file-text-o"></i>最近就诊记录</h4>
+                        <button class="btn btn-xs btn-default" onclick="DoctorPortal.switchTab('history')">查看全部</button>
+                    </div>
+                    <div class="card-body" style="padding:0;">
+                        <table class="portal-table" style="margin-bottom:0;">
+                            <thead><tr><th>时间</th><th>患者</th><th>诊断</th><th>用药</th><th>医生</th></tr></thead>
+                            <tbody id="dashRecentHistory">
+                                <tr><td colspan="5" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <!-- 待办 & 告警 -->
+                <div class="portal-card" style="border-left:4px solid #e74c3c;">
+                    <div class="card-header">
+                        <h4><i class="fa fa-exclamation-triangle" style="color:#e74c3c;"></i> 待办 & 告警</h4>
+                    </div>
+                    <div class="card-body" style="padding:0;max-height:400px;overflow-y:auto;">
+                        <div id="dashAlertList" style="padding:8px 12px;">
+                            <div class="empty-data"><i class="fa fa-spinner fa-spin"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 快捷操作 -->
+                <div class="portal-card">
+                    <div class="card-header"><h4><i class="fa fa-bolt"></i>快捷操作</h4></div>
+                    <div class="card-body" style="padding:12px 16px;">
+                        <div class="row">
+                            <div class="col-xs-6" style="margin-bottom:8px;">
+                                <button class="btn btn-primary btn-block btn-sm" onclick="DoctorPortal.switchTab('consultation')"><i class="fa fa-hospital-o"></i> 就诊台</button>
+                            </div>
+                            <div class="col-xs-6" style="margin-bottom:8px;">
+                                <button class="btn btn-success btn-block btn-sm" onclick="DoctorPortal.openAppointmentAdd()"><i class="fa fa-calendar-plus-o"></i> 新建预约</button>
+                            </div>
+                            <div class="col-xs-6" style="margin-bottom:8px;">
+                                <button class="btn btn-info btn-block btn-sm" onclick="DoctorPortal.openHealthAdd()"><i class="fa fa-heartbeat"></i> 健康录入</button>
+                            </div>
+                            <div class="col-xs-6" style="margin-bottom:8px;">
+                                <button class="btn btn-warning btn-block btn-sm" onclick="DoctorPortal.openChronicAdd()"><i class="fa fa-heart"></i> 慢病建档</button>
+                            </div>
+                            <div class="col-xs-6" style="margin-bottom:0;">
+                                <button class="btn btn-default btn-block btn-sm" onclick="DoctorPortal.switchTab('medicine')"><i class="fa fa-medkit"></i> 药品管理</button>
+                            </div>
+                            <div class="col-xs-6" style="margin-bottom:0;">
+                                <button class="btn btn-default btn-block btn-sm" onclick="DoctorPortal.switchTab('public_health')"><i class="fa fa-ambulance"></i> 公共卫生</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 公共卫生概览 -->
+                <div class="portal-card">
+                    <div class="card-header">
+                        <h4><i class="fa fa-ambulance"></i>公共卫生</h4>
+                        <button class="btn btn-xs btn-default" onclick="DoctorPortal.switchTab('public_health')">详情</button>
+                    </div>
+                    <div class="card-body" style="padding:8px 16px;">
+                        <div class="row" style="font-size:12px;">
+                            <div class="col-xs-6" style="margin-bottom:8px;padding:6px;background:#e3f2fd;border-radius:6px;text-align:center;">
+                                <i class="fa fa-syringe" style="color:#1565c0;display:block;font-size:18px;margin-bottom:4px;"></i>
+                                <span style="font-weight:600;color:#333;">接种记录</span><br>
+                                <span style="font-size:18px;font-weight:700;color:#1565c0;" id="dashVaccCount">-</span>
+                            </div>
+                            <div class="col-xs-6" style="margin-bottom:8px;padding:6px;background:#fce4ec;border-radius:6px;text-align:center;">
+                                <i class="fa fa-female" style="color:#c62828;display:block;font-size:18px;margin-bottom:4px;"></i>
+                                <span style="font-weight:600;color:#333;">孕产妇</span><br>
+                                <span style="font-size:18px;font-weight:700;color:#c62828;" id="dashMaternalCount">-</span>
+                            </div>
+                            <div class="col-xs-6" style="margin-bottom:0;padding:6px;background:#e8f5e9;border-radius:6px;text-align:center;">
+                                <i class="fa fa-user-md" style="color:#2e7d32;display:block;font-size:18px;margin-bottom:4px;"></i>
+                                <span style="font-weight:600;color:#333;">老年体检</span><br>
+                                <span style="font-size:18px;font-weight:700;color:#2e7d32;" id="dashElderlyCount">-</span>
+                            </div>
+                            <div class="col-xs-6" style="margin-bottom:0;padding:6px;background:#fff3e0;border-radius:6px;text-align:center;">
+                                <i class="fa fa-bug" style="color:#e65100;display:block;font-size:18px;margin-bottom:4px;"></i>
+                                <span style="font-weight:600;color:#333;">传染病</span><br>
+                                <span style="font-size:18px;font-weight:700;color:#e65100;" id="dashInfectCount">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 就诊台面板 ===== -->
+    <div id="panel-consultation" style="display:none;">
+        <!-- 就诊台统计 -->
+        <div class="row">
+            <div class="col-sm-4">
+                <div class="stat-card" style="border-left:4px solid #f7971e;">
+                    <div class="stat-icon orange"><i class="fa fa-clock-o"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="consultWaitingCount">0</div>
+                        <div class="stat-label">候诊中</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="stat-card" style="border-left:4px solid #1a9bfc;">
+                    <div class="stat-icon blue"><i class="fa fa-stethoscope"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="consultInProgressCount">0</div>
+                        <div class="stat-label">就诊中</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="stat-card" style="border-left:4px solid #11998e;">
+                    <div class="stat-icon green"><i class="fa fa-check-circle"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number" id="consultCompletedCount">0</div>
+                        <div class="stat-label">已完成</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- 候诊队列 -->
+            <div class="col-sm-5">
+                <div class="portal-card">
+                    <div class="card-header">
+                        <h4><i class="fa fa-list-ol"></i>候诊队列</h4>
+                        <button class="btn btn-sm btn-default" onclick="DoctorPortal.loadConsultationDesk()"><i class="fa fa-refresh"></i> 刷新</button>
+                    </div>
+                    <div class="card-body" id="waitingQueueBody" style="max-height:500px;overflow-y:auto;">
+                        <div class="empty-data"><i class="fa fa-spinner fa-spin"></i><p>加载中...</p></div>
+                    </div>
+                </div>
+            </div>
+            <!-- 当前就诊 / 就诊表单 -->
+            <div class="col-sm-7">
+                <div class="portal-card" id="currentPatientCard" style="display:none;">
+                    <div class="card-header" style="background:linear-gradient(135deg,#1a9bfc,#0d6efd);border-radius:10px 10px 0 0;">
+                        <h4 style="color:#fff;"><i class="fa fa-stethoscope"></i> 当前就诊</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="consult-patient-header">
+                            <div class="consult-patient-avatar"><i class="fa fa-user"></i></div>
+                            <div class="consult-patient-info">
+                                <h3 id="currentPatientName">-</h3>
+                                <p><i class="fa fa-clock-o"></i> 预约时间：<span id="currentPatientTime">-</span></p>
+                                <p><i class="fa fa-map-marker"></i> 预约地点：<span id="currentPatientPlace">-</span></p>
+                            </div>
+                        </div>
+                        <hr style="margin:16px 0;border-color:#f0f0f0;">
+                        <form id="consultationForm" class="form-horizontal">
+                            <input type="hidden" id="consultAppointmentId">
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label"><i class="fa fa-stethoscope" style="color:#1a9bfc;"></i> 症状诊断</label>
+                                <div class="col-sm-8">
+                                    <textarea class="form-control" id="consultPatientSym" rows="3" placeholder="请输入患者症状和诊断描述" required></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label"><i class="fa fa-medkit" style="color:#11998e;"></i> 用药处方</label>
+                                <div class="col-sm-8">
+                                    <textarea class="form-control" id="consultPatientMedicine" rows="3" placeholder="请输入用药和处方信息" required></textarea>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-sm-3 control-label"><i class="fa fa-money" style="color:#f7971e;"></i> 费用(元)</label>
+                                <div class="col-sm-8">
+                                    <input type="number" class="form-control" id="consultTakeprice" placeholder="请输入就诊费用" min="0" required>
+                                </div>
+                            </div>
+                        </form>
+                        <div style="text-align:right;margin-top:10px;">
+                            <button class="btn btn-default" onclick="DoctorPortal.cancelConsultation()"><i class="fa fa-arrow-left"></i> 暂停就诊</button>
+                            <button class="btn btn-success btn-lg" onclick="DoctorPortal.finishConsultation()" style="margin-left:8px;"><i class="fa fa-check"></i> 完成就诊</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- 无就诊中患者时的提示 -->
+                <div class="portal-card" id="noCurrentPatientCard">
+                    <div class="card-body" style="padding:60px 20px;text-align:center;">
+                        <i class="fa fa-user-md" style="font-size:64px;color:#ddd;"></i>
+                        <h4 style="color:#999;margin-top:16px;">暂无就诊中的患者</h4>
+                        <p style="color:#bbb;font-size:13px;">请从左侧候诊队列中选择患者接诊</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 预约管理面板 ===== -->
+    <div id="panel-appointments" style="display:none;">
+        <div class="portal-card">
+            <div class="card-header">
+                <h4><i class="fa fa-calendar-check-o"></i>预约管理</h4>
+                <div>
+                    <input type="text" class="form-control" id="apptSearchInput" placeholder="搜索患者..." style="width:160px;display:inline-block;margin-right:8px;" onkeyup="DoctorPortal.searchAppointments()">
+                    <button class="btn btn-sm btn-success" onclick="DoctorPortal.openAppointmentAdd()"><i class="fa fa-plus"></i> 新增预约</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <table class="portal-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>患者姓名</th>
+                            <th>接诊医生</th>
+                            <th>预约时间</th>
+                            <th>预约地点</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="appointmentTable">
+                        <tr><td colspan="7" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 健康监测面板 ===== -->
+    <div id="panel-health" style="display:none;">
+        <div class="portal-card">
+            <div class="card-header">
+                <h4><i class="fa fa-heartbeat"></i>居民健康监测</h4>
+                <div>
+                    <input type="text" class="form-control" id="healthSearchInput" placeholder="搜索居民..." style="width:160px;display:inline-block;margin-right:8px;" onkeyup="DoctorPortal.searchHealth()">
+                    <button class="btn btn-sm btn-success" onclick="DoctorPortal.openHealthAdd()"><i class="fa fa-plus"></i> 新增记录</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <table class="portal-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>居民姓名</th>
+                            <th>心跳(次/分)</th>
+                            <th>血压(mmHg)</th>
+                            <th>血氧(%)</th>
+                            <th>脉搏(次/分)</th>
+                            <th>检测时间</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="healthTable">
+                        <tr><td colspan="9" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 就诊记录面板 ===== -->
+    <div id="panel-history" style="display:none;">
+        <div class="portal-card">
+            <div class="card-header">
+                <h4><i class="fa fa-file-text-o"></i>就诊记录</h4>
+                <div>
+                    <input type="text" class="form-control" id="historySearchInput" placeholder="搜索患者..." style="width:160px;display:inline-block;margin-right:8px;" onkeyup="DoctorPortal.searchHistory()">
+                    <button class="btn btn-sm btn-success" onclick="DoctorPortal.openHistoryAdd()"><i class="fa fa-plus"></i> 新增记录</button>
+                    <input type="text" class="form-control" id="doctorExportIdcard" placeholder="输入身份证号导出..." style="width:180px;display:inline-block;margin-left:8px;margin-right:4px;">
+                    <button class="btn btn-sm btn-info" onclick="DoctorPortal.exportHistoryByIdcard()"><i class="fa fa-download"></i> 批量导出</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <table class="portal-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>患者姓名</th>
+                            <th>症状</th>
+                            <th>主治医生</th>
+                            <th>用药</th>
+                            <th>费用(元)</th>
+                            <th>就诊时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTable">
+                        <tr><td colspan="8" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 药品管理面板 ===== -->
+    <div id="panel-medicine" style="display:none;">
+        <!-- 药品统计卡片 -->
+        <div class="row">
+            <div class="col-sm-3">
+                <div class="stat-card"><div class="stat-icon blue"><i class="fa fa-medkit"></i></div><div class="stat-info"><div class="stat-number" id="medTotalCount">0</div><div class="stat-label">药品总数</div></div></div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card"><div class="stat-icon orange"><i class="fa fa-cubes"></i></div><div class="stat-info"><div class="stat-number" id="medBatchCount">0</div><div class="stat-label">批次总数</div></div></div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card" style="border-left:4px solid #e74c3c;"><div class="stat-icon red"><i class="fa fa-exclamation-triangle"></i></div><div class="stat-info"><div class="stat-number" id="medLowStockCount">0</div><div class="stat-label">库存不足</div></div></div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card" style="border-left:4px solid #f39c12;"><div class="stat-icon orange"><i class="fa fa-clock-o"></i></div><div class="stat-info"><div class="stat-number" id="medNearExpiryCount">0</div><div class="stat-label">近效期预警</div></div></div>
+            </div>
+        </div>
+
+        <!-- 子标签 -->
+        <ul class="nav nav-tabs" style="margin-bottom:15px;border-bottom:2px solid #1a9bfc;">
+            <li class="active"><a href="javascript:void(0);" onclick="DoctorPortal.switchMedSubTab('catalog')" style="padding:8px 16px;">药品目录</a></li>
+            <li><a href="javascript:void(0);" onclick="DoctorPortal.switchMedSubTab('batch')" style="padding:8px 16px;">批次管理</a></li>
+            <li><a href="javascript:void(0);" onclick="DoctorPortal.switchMedSubTab('stock')" style="padding:8px 16px;">入库出库</a></li>
+            <li><a href="javascript:void(0);" onclick="DoctorPortal.switchMedSubTab('alert')" style="padding:8px 16px;">库存预警 <span class="badge badge-danger" id="medAlertBadge" style="display:none;">0</span></a></li>
+        </ul>
+
+        <!-- 子面板：药品目录 -->
+        <div id="subpanel-medicine-catalog">
+            <div class="portal-card">
+                <div class="card-header">
+                    <h4><i class="fa fa-list"></i>药品目录</h4>
+                    <div>
+                        <input type="text" class="form-control" id="medSearchInput" placeholder="搜索药品名称..." style="width:200px;display:inline-block;margin-right:8px;" onkeyup="DoctorPortal.searchMedicine()">
+                        <button class="btn btn-sm btn-success" onclick="DoctorPortal.openMedicineAdd()"><i class="fa fa-plus"></i> 新增药品</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <table class="portal-table">
+                        <thead>
+                            <tr><th>ID</th><th>药品名称</th><th>价格(元)</th><th>功效</th><th>库存余量</th><th>操作</th></tr>
+                        </thead>
+                        <tbody id="medicineTable">
+                            <tr><td colspan="6" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                        </tbody>
+                    </table>
+                    <div id="medPagination" class="text-right" style="margin-top:10px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 子面板：批次管理 -->
+        <div id="subpanel-medicine-batch" style="display:none;">
+            <div class="portal-card">
+                <div class="card-header">
+                    <h4><i class="fa fa-cubes"></i>批次库存</h4>
+                    <div>
+                        <select id="batchMedicineFilter" class="form-control" style="width:200px;display:inline-block;" onchange="DoctorPortal.loadBatchList()">
+                            <option value="">全部药品</option>
+                        </select>
+                        <button class="btn btn-sm btn-default" onclick="DoctorPortal.loadBatchList()"><i class="fa fa-refresh"></i> 刷新</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <table class="portal-table">
+                        <thead>
+                            <tr><th>药品名称</th><th>批次号</th><th>生产日期</th><th>有效期至</th><th>剩余量</th><th>效期状态</th></tr>
+                        </thead>
+                        <tbody id="batchTable">
+                            <tr><td colspan="6" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 子面板：入库出库 -->
+        <div id="subpanel-medicine-stock" style="display:none;">
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="portal-card">
+                        <div class="card-header"><h4><i class="fa fa-sign-in"></i>药品入库</h4></div>
+                        <div class="card-body">
+                            <form id="stockInForm" class="form-horizontal">
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">药品</label>
+                                    <div class="col-sm-8">
+                                        <select class="form-control" id="stockInMedicineId" required></select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">批次号</label>
+                                    <div class="col-sm-8"><input type="text" class="form-control" id="stockInBatchNo" placeholder="如 BAT20260101" required></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">生产日期</label>
+                                    <div class="col-sm-8"><input type="date" class="form-control" id="stockInProdDate" required></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">有效期至</label>
+                                    <div class="col-sm-8"><input type="date" class="form-control" id="stockInExpDate" required></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">数量</label>
+                                    <div class="col-sm-8"><input type="number" class="form-control" id="stockInQuantity" min="1" required></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">供应商</label>
+                                    <div class="col-sm-8"><input type="text" class="form-control" id="stockInSupplier"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">单价(元)</label>
+                                    <div class="col-sm-8"><input type="number" class="form-control" id="stockInPrice" step="0.01"></div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <button type="button" class="btn btn-primary" onclick="DoctorPortal.submitStockIn()"><i class="fa fa-check"></i> 确认入库</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="portal-card">
+                        <div class="card-header"><h4><i class="fa fa-sign-out"></i>药品出库</h4></div>
+                        <div class="card-body">
+                            <form id="stockOutForm" class="form-horizontal">
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">药品</label>
+                                    <div class="col-sm-8">
+                                        <select class="form-control" id="stockOutMedicineId" required onchange="DoctorPortal.loadStockOutBatches()"></select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">批次</label>
+                                    <div class="col-sm-8">
+                                        <select class="form-control" id="stockOutBatchId" required><option value="">请先选择药品</option></select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">出库数量</label>
+                                    <div class="col-sm-8"><input type="number" class="form-control" id="stockOutQuantity" min="1" required></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">发药对象</label>
+                                    <div class="col-sm-8"><input type="text" class="form-control" id="stockOutTarget" placeholder="患者姓名"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-sm-3 control-label">出库原因</label>
+                                    <div class="col-sm-8">
+                                        <select class="form-control" id="stockOutReason">
+                                            <option value="处方发药">处方发药</option>
+                                            <option value="科室领用">科室领用</option>
+                                            <option value="退货">退货</option>
+                                            <option value="报损">报损</option>
+                                            <option value="其他">其他</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <button type="button" class="btn btn-danger" onclick="DoctorPortal.submitStockOut()"><i class="fa fa-check"></i> 确认出库</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 操作日志 -->
+            <div class="portal-card" style="margin-top:15px;">
+                <div class="card-header"><h4><i class="fa fa-history"></i>操作日志</h4></div>
+                <div class="card-body">
+                    <table class="portal-table">
+                        <thead><tr><th>时间</th><th>药品</th><th>操作类型</th><th>批次号</th><th>数量</th><th>操作员</th></tr></thead>
+                        <tbody id="stockLogTable"><tr><td colspan="6" class="empty-data">加载中...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 子面板：库存预警 -->
+        <div id="subpanel-medicine-alert" style="display:none;">
+            <div class="row">
+                <div class="col-sm-6">
+                    <div class="portal-card" style="border-left:4px solid #e74c3c;">
+                        <div class="card-header"><h4><i class="fa fa-exclamation-triangle" style="color:#e74c3c;"></i> 低库存预警</h4></div>
+                        <div class="card-body" style="max-height:400px;overflow-y:auto;">
+                            <table class="portal-table">
+                                <thead><tr><th>药品名称</th><th>当前库存</th><th>最低阈值</th><th>状态</th></tr></thead>
+                                <tbody id="lowStockTable"><tr><td colspan="4" class="empty-data">加载中...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="portal-card" style="border-left:4px solid #f39c12;">
+                        <div class="card-header"><h4><i class="fa fa-clock-o" style="color:#f39c12;"></i> 近效期预警 (≤90天)</h4></div>
+                        <div class="card-body" style="max-height:400px;overflow-y:auto;">
+                            <table class="portal-table">
+                                <thead><tr><th>药品名称</th><th>批次号</th><th>有效期至</th><th>剩余天数</th></tr></thead>
+                                <tbody id="nearExpiryTable"><tr><td colspan="4" class="empty-data">加载中...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- 新增预约模态框 -->
+<div class="modal fade" id="appointmentAddModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                <h4 class="modal-title"><i class="fa fa-calendar-check-o"></i> 新增预约</h4>
+            </div>
+            <div class="modal-body">
+                <form id="appointmentAddForm" class="form-horizontal">
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">患者姓名</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addPatientName" name="patientName" placeholder="请输入患者姓名" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">患者身份证</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addPatientIdcard" name="patientIdcard" placeholder="请输入患者身份证号">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">预约时间</label>
+                        <div class="col-sm-8">
+                            <input type="datetime-local" class="form-control" id="addPointDate" name="pointDate" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">预约地点</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addPointPlace" name="pointPlace" placeholder="请输入预约地点" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="DoctorPortal.submitAppointment()">提交</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑预约模态框 -->
+<div class="modal fade" id="appointmentEditModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                <h4 class="modal-title"><i class="fa fa-edit"></i> 编辑预约</h4>
+            </div>
+            <div class="modal-body">
+                <form id="appointmentEditForm" class="form-horizontal">
+                    <input type="hidden" id="editAppointmentId">
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">患者姓名</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="editPatientName" name="patientName" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">患者身份证</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="editPatientIdcard" name="patientIdcard">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">预约时间</label>
+                        <div class="col-sm-8">
+                            <input type="datetime-local" class="form-control" id="editPointDate" name="pointDate" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">预约地点</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="editPointPlace" name="pointPlace" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="DoctorPortal.submitEditAppointment()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新增健康记录模态框 -->
+<div class="modal fade" id="healthAddModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                <h4 class="modal-title"><i class="fa fa-heartbeat"></i> 新增健康记录</h4>
+            </div>
+            <div class="modal-body">
+                <form id="healthAddForm" class="form-horizontal">
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">居民姓名</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addHealthPatientName" name="patientName" placeholder="请输入居民姓名" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">居民身份证</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addHealthPatientIdcard" name="patientIdcard" placeholder="请输入身份证号">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">心跳(次/分)</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="addHeartJump" name="heartJump" placeholder="60-100" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">血压(mmHg)</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="addBloodPressure" name="bloodPressure" placeholder="90-140" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">血氧(%)</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="addBloodOx" name="bloodOx" placeholder="95-100" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">脉搏(次/分)</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="addPulse" name="pulse" placeholder="60-100" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">检测时间</label>
+                        <div class="col-sm-8">
+                            <input type="datetime-local" class="form-control" id="addHealthDate" name="date" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="DoctorPortal.submitHealth()">提交</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新增就诊记录模态框 -->
+<div class="modal fade" id="historyAddModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                <h4 class="modal-title"><i class="fa fa-file-text-o"></i> 新增就诊记录</h4>
+            </div>
+            <div class="modal-body">
+                <form id="historyAddForm" class="form-horizontal">
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">患者姓名</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addHistoryPatientName" name="patientName" placeholder="请输入患者姓名" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">患者身份证</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addHistoryPatientIdcard" name="patientIdcard" placeholder="请输入患者身份证号">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">症状</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addPatientSym" name="patientSym" placeholder="请输入症状描述" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">用药</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addPatientMedicine" name="patientMedicine" placeholder="请输入用药信息">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">费用(元)</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="addTakeprice" name="takeprice" placeholder="请输入费用">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">就诊时间</label>
+                        <div class="col-sm-8">
+                            <input type="datetime-local" class="form-control" id="addHistoryDate" name="patientHistoryDate" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="DoctorPortal.submitHistory()">提交</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新增药品模态框 -->
+<div class="modal fade" id="medicineAddModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                <h4 class="modal-title"><i class="fa fa-medkit"></i> 新增药品</h4>
+            </div>
+            <div class="modal-body">
+                <form id="medicineAddForm" class="form-horizontal">
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">药品名称</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addMedicineName" name="medicineName" placeholder="请输入药品名称" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">价格(元)</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="addMedicinePrice" name="medicinePrice" placeholder="请输入价格" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">功效</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addMedicineValue" name="medicineValue" placeholder="请输入功效描述" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">库存余量</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="addMedicineStock" name="medicineStock" placeholder="请输入库存数量" min="0" value="0" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="DoctorPortal.submitMedicine()">提交</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑药品模态框 -->
+<div class="modal fade" id="medicineEditModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                <h4 class="modal-title"><i class="fa fa-edit"></i> 编辑药品</h4>
+            </div>
+            <div class="modal-body">
+                <form id="medicineEditForm" class="form-horizontal">
+                    <input type="hidden" id="editMedicineId">
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">药品名称</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="editMedicineName" name="medicineName" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">价格(元)</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="editMedicinePrice" name="medicinePrice" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">功效</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="editMedicineValue" name="medicineValue" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">库存余量</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="editMedicineStock" name="medicineStock" placeholder="请输入库存数量" min="0" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="DoctorPortal.submitEditMedicine()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 页脚 -->
+<footer style="text-align:center;padding:20px;color:#bbb;font-size:12px;background:#f3f6fb;">
+    社区医疗服务平台管理系统 - 医护端&copy; 2026
+</footer>
+
+<!-- ===== 慢病管理面板 ===== -->
+<div id="panel-chronic" style="display:none;">
+    <!-- 慢病统计卡片 -->
+    <div class="row" style="margin-bottom:15px;">
+        <div class="col-sm-2">
+            <div class="stat-card" style="padding:12px 10px;">
+                <div class="stat-info">
+                    <div class="stat-number" id="chronicTotalCount">0</div>
+                    <div class="stat-label">管理总数</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-2">
+            <div class="stat-card" style="padding:12px 10px;border-left:4px solid #27ae60;">
+                <div class="stat-info">
+                    <div class="stat-number" id="chronicLowCount">0</div>
+                    <div class="stat-label" style="color:#27ae60;">低风险</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-2">
+            <div class="stat-card" style="padding:12px 10px;border-left:4px solid #f39c12;">
+                <div class="stat-info">
+                    <div class="stat-number" id="chronicMidCount">0</div>
+                    <div class="stat-label" style="color:#f39c12;">中风险</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-2">
+            <div class="stat-card" style="padding:12px 10px;border-left:4px solid #e74c3c;">
+                <div class="stat-info">
+                    <div class="stat-number" id="chronicHighCount">0</div>
+                    <div class="stat-label" style="color:#e74c3c;">高风险</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-2">
+            <div class="stat-card" style="padding:12px 10px;border-left:4px solid #3498db;">
+                <div class="stat-info">
+                    <div class="stat-number" id="chronicPendingFollowup">0</div>
+                    <div class="stat-label" style="color:#3498db;">待随访</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-2">
+            <div class="stat-card" style="padding:12px 10px;border-left:4px solid #8e44ad;">
+                <div class="stat-info">
+                    <div class="stat-number" id="chronicDiseaseTypes">6</div>
+                    <div class="stat-label" style="color:#8e44ad;">病种数</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 筛选区 -->
+    <div class="portal-card" style="margin-bottom:15px;padding:12px 15px;">
+        <div class="row">
+            <div class="col-sm-3">
+                <select id="chronicDiseaseFilter" class="form-control" onchange="DoctorPortal.loadChronicList()">
+                    <option value="">全部病种</option>
+                    <option value="高血压">高血压</option>
+                    <option value="糖尿病">糖尿病</option>
+                    <option value="冠心病">冠心病</option>
+                    <option value="脑卒中">脑卒中</option>
+                    <option value="慢阻肺">慢阻肺</option>
+                    <option value="慢性肾病">慢性肾病</option>
+                </select>
+            </div>
+            <div class="col-sm-3">
+                <select id="chronicRiskFilter" class="form-control" onchange="DoctorPortal.loadChronicList()">
+                    <option value="">全部风险</option>
+                    <option value="低风险">低风险</option>
+                    <option value="中风险">中风险</option>
+                    <option value="高风险">高风险</option>
+                </select>
+            </div>
+            <div class="col-sm-3">
+                <button class="btn btn-success" onclick="DoctorPortal.openChronicAdd()"><i class="fa fa-plus"></i> 新增档案</button>
+                <button class="btn btn-warning" onclick="DoctorPortal.openRiskAssess()" style="margin-left:4px;"><i class="fa fa-heartbeat"></i> 风险评估</button>
+            </div>
+            <div class="col-sm-3" style="text-align:right;">
+                <button class="btn btn-default" onclick="DoctorPortal.loadChronicList()"><i class="fa fa-refresh"></i> 刷新</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 慢病档案列表 -->
+    <div class="portal-card">
+        <div class="card-header">
+            <h4><i class="fa fa-heartbeat"></i>慢病档案管理</h4>
+        </div>
+        <div class="card-body">
+            <table class="portal-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>患者姓名</th>
+                        <th>身份证号</th>
+                        <th>慢病类型</th>
+                        <th>风险等级</th>
+                        <th>确诊日期</th>
+                        <th>管理医生</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="chronicTable">
+                    <tr><td colspan="9" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 随访计划列表 -->
+    <div class="portal-card" style="margin-top:15px;">
+        <div class="card-header">
+            <h4><i class="fa fa-calendar"></i>随访计划</h4>
+        </div>
+        <div class="card-body">
+            <table class="portal-table">
+                <thead>
+                    <tr>
+                        <th>患者姓名</th>
+                        <th>慢病类型</th>
+                        <th>计划随访日期</th>
+                        <th>随访方式</th>
+                        <th>负责医生</th>
+                        <th>状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="followupPlanTable">
+                    <tr><td colspan="7" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 新增慢病档案模态框 -->
+<div class="modal fade" id="chronicAddModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;border-radius:6px 6px 0 0;">
+                <button type="button" class="close" data-dismiss="modal" style="color:#fff;"><span>&times;</span></button>
+                <h4 class="modal-title" style="color:#fff;"><i class="fa fa-heartbeat"></i> 新增慢病档案</h4>
+            </div>
+            <div class="modal-body">
+                <form id="chronicAddForm" class="form-horizontal">
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">患者姓名</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addChronicPatientName" name="patientName" placeholder="请输入患者姓名" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">身份证号</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addChronicPatientIdcard" name="patientIdcard" placeholder="请输入身份证号">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">慢病类型</label>
+                        <div class="col-sm-8">
+                            <select class="form-control" id="addChronicDiseaseType" name="diseaseType" required>
+                                <option value="高血压">高血压</option>
+                                <option value="糖尿病">糖尿病</option>
+                                <option value="冠心病">冠心病</option>
+                                <option value="脑卒中">脑卒中</option>
+                                <option value="慢阻肺">慢阻肺</option>
+                                <option value="慢性肾病">慢性肾病</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">风险等级</label>
+                        <div class="col-sm-8">
+                            <select class="form-control" id="addChronicRiskLevel" name="riskLevel" required>
+                                <option value="低风险">低风险</option>
+                                <option value="中风险">中风险</option>
+                                <option value="高风险">高风险</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">确诊日期</label>
+                        <div class="col-sm-8">
+                            <input type="date" class="form-control" id="addChronicDiagnosisDate" name="diagnosisDate" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">备注</label>
+                        <div class="col-sm-8">
+                            <textarea class="form-control" id="addChronicRemark" name="remark" rows="3" placeholder="备注信息"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="DoctorPortal.submitChronic()">提交</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新增随访记录模态框 -->
+<div class="modal fade" id="followupAddModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,#3498db,#2980b9);color:#fff;border-radius:6px 6px 0 0;">
+                <button type="button" class="close" data-dismiss="modal" style="color:#fff;"><span>&times;</span></button>
+                <h4 class="modal-title" style="color:#fff;"><i class="fa fa-stethoscope"></i> 新增随访记录</h4>
+            </div>
+            <div class="modal-body">
+                <form id="followupAddForm" class="form-horizontal">
+                    <input type="hidden" id="addFollowupChronicId" name="chronicId">
+                    <input type="hidden" id="addFollowupPatientName" name="patientName">
+                    <input type="hidden" id="addFollowupDiseaseType" name="diseaseType">
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">患者姓名</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addFollowupPatientNameDisplay" readonly style="background:#f5f5f5;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">慢病类型</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addFollowupDiseaseTypeDisplay" readonly style="background:#f5f5f5;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">随访方式</label>
+                        <div class="col-sm-8">
+                            <select class="form-control" id="addFollowupType" name="followupType">
+                                <option value="门诊">门诊</option>
+                                <option value="电话">电话</option>
+                                <option value="家庭">家庭</option>
+                                <option value="线上">线上</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">症状描述</label>
+                        <div class="col-sm-8">
+                            <textarea class="form-control" id="addFollowupSymptoms" name="symptoms" rows="2" placeholder="请输入症状描述"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group" id="bloodPressureGroup">
+                        <label class="col-sm-3 control-label">血压(mmHg)</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addFollowupBloodPressure" name="bloodPressure" placeholder="如 140/90">
+                        </div>
+                    </div>
+                    <div class="form-group" id="bloodSugarGroup">
+                        <label class="col-sm-3 control-label">血糖</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addFollowupBloodSugar" name="bloodSugar" placeholder="如 7.8mmol/L">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">心率(次/分)</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="addFollowupHeartRate" name="heartRate" placeholder="60-100">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">服药依从性</label>
+                        <div class="col-sm-8">
+                            <select class="form-control" id="addFollowupCompliance" name="medicationCompliance">
+                                <option value="良好">良好</option>
+                                <option value="一般">一般</option>
+                                <option value="差">差</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">生活方式建议</label>
+                        <div class="col-sm-8">
+                            <textarea class="form-control" id="addFollowupLifestyle" name="lifestyleAdvice" rows="2" placeholder="饮食、运动等建议"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">本次风险评级</label>
+                        <div class="col-sm-8">
+                            <select class="form-control" id="addFollowupRiskLevel" name="riskLevel">
+                                <option value="低风险">低风险</option>
+                                <option value="中风险">中风险</option>
+                                <option value="高风险">高风险</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">随访日期</label>
+                        <div class="col-sm-8">
+                            <input type="datetime-local" class="form-control" id="addFollowupDate" name="followupDate" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="DoctorPortal.submitFollowup()">提交</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 随访记录查看模态框 -->
+<div class="modal fade" id="followupListModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                <h4 class="modal-title"><i class="fa fa-file-text-o"></i> 随访记录</h4>
+            </div>
+            <div class="modal-body">
+                <table class="portal-table">
+                    <thead>
+                        <tr>
+                            <th>随访日期</th>
+                            <th>随访医生</th>
+                            <th>随访方式</th>
+                            <th>症状</th>
+                            <th>血压</th>
+                            <th>血糖</th>
+                            <th>心率</th>
+                            <th>依从性</th>
+                            <th>风险评级</th>
+                            <th>建议</th>
+                        </tr>
+                    </thead>
+                    <tbody id="followupDetailTable">
+                        <tr><td colspan="10" class="empty-data">暂无随访记录</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 公共卫生面板 ===== -->
+<div id="panel-public_health" style="display:none;">
+    <div class="row">
+        <div class="col-sm-3"><div class="stat-card stat-sm"><div class="stat-icon blue"><i class="fa fa-syringe"></i></div><div class="stat-info"><div class="stat-number" id="phVaccCount2">0</div><div class="stat-label">预防接种</div></div></div></div>
+        <div class="col-sm-3"><div class="stat-card stat-sm"><div class="stat-icon pink"><i class="fa fa-female"></i></div><div class="stat-info"><div class="stat-number" id="phMaternalCount2">0</div><div class="stat-label">孕产妇</div></div></div></div>
+        <div class="col-sm-3"><div class="stat-card stat-sm"><div class="stat-icon green"><i class="fa fa-user-md"></i></div><div class="stat-info"><div class="stat-number" id="phElderlyCount2">0</div><div class="stat-label">老年体检</div></div></div></div>
+        <div class="col-sm-3"><div class="stat-card stat-sm"><div class="stat-icon red"><i class="fa fa-bug"></i></div><div class="stat-info"><div class="stat-number" id="phInfectCount2">0</div><div class="stat-label">传染病</div></div></div></div>
+    </div>
+    <div class="row" style="margin-top:15px;">
+        <div class="col-sm-6">
+            <div class="portal-card"><div class="card-header"><h4><i class="fa fa-syringe"></i> 预防接种记录</h4><div>
+                    <button class="btn btn-xs btn-success" onclick="DoctorPortal.openVaccAdd()"><i class="fa fa-plus"></i> 新增</button>
+                    <button class="btn btn-xs btn-info" onclick="DoctorPortal.loadVaccSchedule()"><i class="fa fa-calendar"></i> 计划表</button>
+                </div></div><div class="card-body" style="max-height:250px;overflow-y:auto;">
+                <table class="table table-striped table-condensed"><thead><tr><th>姓名</th><th>疫苗</th><th>剂次</th><th>接种日期</th><th width="60">操作</th></tr></thead><tbody id="phVaccTable"></tbody></table>
+            </div></div>
+        </div>
+        <div class="col-sm-6">
+            <div class="portal-card"><div class="card-header"><h4><i class="fa fa-female"></i> 孕产妇建册</h4><div>
+                    <button class="btn btn-xs btn-success" onclick="DoctorPortal.openMaternalAdd()"><i class="fa fa-plus"></i> 新建册</button>
+                </div></div><div class="card-body" style="max-height:250px;overflow-y:auto;">
+                <table class="table table-striped table-condensed"><thead><tr><th>姓名</th><th>预产期</th><th>高危</th><th>医生</th><th width="60">操作</th></tr></thead><tbody id="phMaternalTable"></tbody></table>
+            </div></div>
+        </div>
+    </div>
+    <div class="row" style="margin-top:15px;">
+        <div class="col-sm-6">
+            <div class="portal-card"><div class="card-header"><h4><i class="fa fa-user-md"></i> 老年人体检</h4><div>
+                    <button class="btn btn-xs btn-success" onclick="DoctorPortal.openElderlyAdd()"><i class="fa fa-plus"></i> 新增体检</button>
+                </div></div><div class="card-body" style="max-height:250px;overflow-y:auto;">
+                <table class="table table-striped table-condensed"><thead><tr><th>姓名</th><th>体检日期</th><th>BMI</th><th>血压</th><th>健康评价</th><th width="60">操作</th></tr></thead><tbody id="phElderlyTable"></tbody></table>
+            </div></div>
+        </div>
+        <div class="col-sm-6">
+            <div class="portal-card"><div class="card-header"><h4><i class="fa fa-bug"></i> 传染病报告</h4><div>
+                    <button class="btn btn-xs btn-success" onclick="DoctorPortal.openInfectAdd()"><i class="fa fa-plus"></i> 新增报告</button>
+                </div></div><div class="card-body" style="max-height:250px;overflow-y:auto;">
+                <table class="table table-striped table-condensed"><thead><tr><th>患者</th><th>病种</th><th>类别</th><th>报告日期</th><th>状态</th><th width="60">操作</th></tr></thead><tbody id="phInfectTable"></tbody></table>
+            </div></div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 公共卫生 - 预防接种新增模态框 ===== -->
+<div class="modal fade" id="vaccAddModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document"><div class="modal-content">
+        <div class="modal-header" style="background:linear-gradient(135deg,#3498db,#2980b9);color:#fff;border-radius:6px 6px 0 0;">
+            <button type="button" class="close" data-dismiss="modal" style="color:#fff;"><span>&times;</span></button>
+            <h4 class="modal-title" style="color:#fff;"><i class="fa fa-syringe"></i> 新增预防接种记录</h4>
+        </div>
+        <div class="modal-body">
+            <form id="vaccAddForm" class="form-horizontal">
+                <div class="form-group"><label class="col-sm-3 control-label">居民姓名</label><div class="col-sm-8"><input type="text" class="form-control" id="addVaccPatientName" required></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">疫苗名称</label><div class="col-sm-8"><input type="text" class="form-control" id="addVaccName" placeholder="如：乙肝疫苗" required></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">剂次</label><div class="col-sm-8"><select class="form-control" id="addVaccDose"><option value="1">第1剂</option><option value="2">第2剂</option><option value="3">第3剂</option><option value="99">加强</option></select></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">接种日期</label><div class="col-sm-8"><input type="date" class="form-control" id="addVaccDate" required></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">接种部位</label><div class="col-sm-8"><input type="text" class="form-control" id="addVaccSite" placeholder="如：左上臂"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">疫苗批号</label><div class="col-sm-8"><input type="text" class="form-control" id="addVaccBatch"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">生产厂家</label><div class="col-sm-8"><input type="text" class="form-control" id="addVaccManufacturer"></div></div>
+            </form>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">取消</button><button type="button" class="btn btn-primary" onclick="DoctorPortal.submitVacc()">提交</button></div>
+    </div></div>
+</div>
+
+<!-- 接种计划表模态框 -->
+<div class="modal fade" id="vaccScheduleModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document"><div class="modal-content">
+        <div class="modal-header" style="background:linear-gradient(135deg,#3498db,#2980b9);color:#fff;border-radius:6px 6px 0 0;">
+            <button type="button" class="close" data-dismiss="modal" style="color:#fff;"><span>&times;</span></button>
+            <h4 class="modal-title" style="color:#fff;"><i class="fa fa-calendar"></i> 国家免疫规划接种计划表</h4>
+        </div>
+        <div class="modal-body"><table class="portal-table"><thead><tr><th>疫苗</th><th>适用年龄</th><th>剂次</th><th>说明</th></tr></thead><tbody id="vaccScheduleTable"></tbody></table></div>
+        <div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">关闭</button></div>
+    </div></div>
+</div>
+
+<!-- ===== 公共卫生 - 孕产妇建册新增模态框 ===== -->
+<div class="modal fade" id="maternalAddModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document"><div class="modal-content">
+        <div class="modal-header" style="background:linear-gradient(135deg,#e91e63,#c2185b);color:#fff;border-radius:6px 6px 0 0;">
+            <button type="button" class="close" data-dismiss="modal" style="color:#fff;"><span>&times;</span></button>
+            <h4 class="modal-title" style="color:#fff;"><i class="fa fa-female"></i> 新建孕产妇档案</h4>
+        </div>
+        <div class="modal-body">
+            <form id="maternalAddForm" class="form-horizontal">
+                <div class="form-group"><label class="col-sm-3 control-label">姓名</label><div class="col-sm-8"><input type="text" class="form-control" id="addMaternalName" required></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">末次月经(LMP)</label><div class="col-sm-8"><input type="date" class="form-control" id="addMaternalLmp" required onchange="DoctorPortal.calcEDD()"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">预产期(EDD)</label><div class="col-sm-8"><input type="date" class="form-control" id="addMaternalEdd" readonly style="background:#f5f5f5;"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">孕次</label><div class="col-sm-8"><input type="number" class="form-control" id="addMaternalGravidity" min="1" value="1"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">产次</label><div class="col-sm-8"><input type="number" class="form-control" id="addMaternalParity" min="0" value="0"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">血型</label><div class="col-sm-8"><select class="form-control" id="addMaternalBloodType"><option value="">未知</option><option value="A">A</option><option value="B">B</option><option value="AB">AB</option><option value="O">O</option></select></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">高危标识</label><div class="col-sm-8"><select class="form-control" id="addMaternalHighRisk"><option value="0">否</option><option value="1">是（高危妊娠）</option></select></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">身份证号</label><div class="col-sm-8"><input type="text" class="form-control" id="addMaternalIdcard"></div></div>
+            </form>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">取消</button><button type="button" class="btn btn-primary" onclick="DoctorPortal.submitMaternal()">提交</button></div>
+    </div></div>
+</div>
+
+<!-- ===== 公共卫生 - 老年体检新增模态框 ===== -->
+<div class="modal fade" id="elderlyAddModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document"><div class="modal-content">
+        <div class="modal-header" style="background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff;border-radius:6px 6px 0 0;">
+            <button type="button" class="close" data-dismiss="modal" style="color:#fff;"><span>&times;</span></button>
+            <h4 class="modal-title" style="color:#fff;"><i class="fa fa-user-md"></i> 新增老年体检记录</h4>
+        </div>
+        <div class="modal-body">
+            <form id="elderlyAddForm" class="form-horizontal">
+                <div class="form-group"><label class="col-sm-3 control-label">姓名</label><div class="col-sm-8"><input type="text" class="form-control" id="addElderlyName" required></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">体检日期</label><div class="col-sm-8"><input type="date" class="form-control" id="addElderlyDate" required></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">身高(cm)</label><div class="col-sm-4"><input type="number" class="form-control" id="addElderlyHeight" step="0.1" onchange="DoctorPortal.calcBMI()"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">体重(kg)</label><div class="col-sm-4"><input type="number" class="form-control" id="addElderlyWeight" step="0.1" onchange="DoctorPortal.calcBMI()"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">BMI</label><div class="col-sm-4"><input type="text" class="form-control" id="addElderlyBmi" readonly style="background:#f5f5f5;"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">血压(mmHg)</label><div class="col-sm-4"><input type="text" class="form-control" id="addElderlyBp" placeholder="如 120/80"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">心率(次/分)</label><div class="col-sm-4"><input type="number" class="form-control" id="addElderlyHr"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">血糖(mmol/L)</label><div class="col-sm-4"><input type="text" class="form-control" id="addElderlyGlu"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">健康评价</label><div class="col-sm-8"><select class="form-control" id="addElderlyAssessment"><option value="良好">良好</option><option value="一般">一般</option><option value="较差">较差</option></select></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">自理能力</label><div class="col-sm-8"><select class="form-control" id="addElderlySelfCare"><option value="完全自理">完全自理</option><option value="部分依赖">部分依赖</option><option value="完全依赖">完全依赖</option></select></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">指导建议</label><div class="col-sm-8"><textarea class="form-control" id="addElderlyAdvice" rows="2"></textarea></div></div>
+            </form>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">取消</button><button type="button" class="btn btn-primary" onclick="DoctorPortal.submitElderly()">提交</button></div>
+    </div></div>
+</div>
+
+<!-- ===== 公共卫生 - 传染病报告新增模态框 ===== -->
+<div class="modal fade" id="infectAddModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document"><div class="modal-content">
+        <div class="modal-header" style="background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;border-radius:6px 6px 0 0;">
+            <button type="button" class="close" data-dismiss="modal" style="color:#fff;"><span>&times;</span></button>
+            <h4 class="modal-title" style="color:#fff;"><i class="fa fa-bug"></i> 新增传染病报告</h4>
+        </div>
+        <div class="modal-body">
+            <form id="infectAddForm" class="form-horizontal">
+                <div class="form-group"><label class="col-sm-3 control-label">患者姓名</label><div class="col-sm-8"><input type="text" class="form-control" id="addInfectName" required></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">病种名称</label><div class="col-sm-8"><input type="text" class="form-control" id="addInfectDisease" placeholder="如：肺结核" required></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">传染病类别</label><div class="col-sm-8"><select class="form-control" id="addInfectCategory" required><option value="甲">甲类</option><option value="乙">乙类</option><option value="丙">丙类</option></select></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">发病日期</label><div class="col-sm-8"><input type="date" class="form-control" id="addInfectOnsetDate" required></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">诊断日期</label><div class="col-sm-8"><input type="date" class="form-control" id="addInfectDiagDate" required></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">报告日期</label><div class="col-sm-8"><input type="date" class="form-control" id="addInfectReportDate" required></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">症状描述</label><div class="col-sm-8"><textarea class="form-control" id="addInfectSymptoms" rows="2"></textarea></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">隔离状态</label><div class="col-sm-8"><select class="form-control" id="addInfectIsolation"><option value="未隔离">未隔离</option><option value="居家隔离">居家隔离</option><option value="住院隔离">住院隔离</option></select></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">密切接触者</label><div class="col-sm-4"><input type="number" class="form-control" id="addInfectCloseContacts" min="0" value="0"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">控制措施</label><div class="col-sm-8"><textarea class="form-control" id="addInfectMeasures" rows="2" placeholder="已采取的控制措施"></textarea></div></div>
+            </form>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">取消</button><button type="button" class="btn btn-primary" onclick="DoctorPortal.submitInfect()">提交</button></div>
+    </div></div>
+</div>
+
+<!-- 编辑慢病档案模态框 -->
+<div class="modal fade" id="chronicEditModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document"><div class="modal-content">
+        <div class="modal-header" style="background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;border-radius:6px 6px 0 0;">
+            <button type="button" class="close" data-dismiss="modal" style="color:#fff;"><span>&times;</span></button>
+            <h4 class="modal-title" style="color:#fff;"><i class="fa fa-edit"></i> 编辑慢病档案</h4>
+        </div>
+        <div class="modal-body">
+            <form id="chronicEditForm" class="form-horizontal">
+                <input type="hidden" id="editChronicId">
+                <div class="form-group"><label class="col-sm-3 control-label">患者姓名</label><div class="col-sm-8"><input type="text" class="form-control" id="editChronicPatientName" required></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">身份证号</label><div class="col-sm-8"><input type="text" class="form-control" id="editChronicPatientIdcard"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">慢病类型</label><div class="col-sm-8"><select class="form-control" id="editChronicDiseaseType"><option value="高血压">高血压</option><option value="糖尿病">糖尿病</option><option value="冠心病">冠心病</option><option value="脑卒中">脑卒中</option><option value="慢阻肺">慢阻肺</option><option value="慢性肾病">慢性肾病</option></select></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">风险等级</label><div class="col-sm-8"><select class="form-control" id="editChronicRiskLevel"><option value="低风险">低风险</option><option value="中风险">中风险</option><option value="高风险">高风险</option></select></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">确诊日期</label><div class="col-sm-8"><input type="date" class="form-control" id="editChronicDiagnosisDate"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">备注</label><div class="col-sm-8"><textarea class="form-control" id="editChronicRemark" rows="2"></textarea></div></div>
+            </form>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">取消</button><button type="button" class="btn btn-primary" onclick="DoctorPortal.submitEditChronic()">保存</button></div>
+    </div></div>
+</div>
+
+<!-- 风险评估模态框 -->
+<div class="modal fade" id="riskAssessModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document"><div class="modal-content">
+        <div class="modal-header" style="background:linear-gradient(135deg,#8e44ad,#6c3483);color:#fff;border-radius:6px 6px 0 0;">
+            <button type="button" class="close" data-dismiss="modal" style="color:#fff;"><span>&times;</span></button>
+            <h4 class="modal-title" style="color:#fff;"><i class="fa fa-heartbeat"></i> 慢病风险评估引擎</h4>
+        </div>
+        <div class="modal-body">
+            <form id="riskAssessForm" class="form-horizontal">
+                <div class="form-group"><label class="col-sm-3 control-label">慢病类型</label><div class="col-sm-8"><select class="form-control" id="assessDiseaseType" onchange="DoctorPortal.showAssessFields()"><option value="高血压">高血压</option><option value="糖尿病">糖尿病</option><option value="冠心病">冠心病</option><option value="脑卒中">脑卒中</option><option value="慢阻肺">慢阻肺</option><option value="慢性肾病">慢性肾病</option></select></div></div>
+                <div id="assessFields"></div>
+                <div class="form-group"><label class="col-sm-3 control-label">评估结果</label><div class="col-sm-8"><input type="text" class="form-control" id="assessResult" readonly style="background:#f5f5f5;font-weight:bold;font-size:16px;"></div></div>
+            </form>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">关闭</button><button type="button" class="btn btn-primary" onclick="DoctorPortal.doRiskAssess()"><i class="fa fa-calculator"></i> 评估风险</button></div>
+    </div></div>
+</div>
+
+<!-- 编辑健康记录模态框 -->
+<div class="modal fade" id="healthEditModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document"><div class="modal-content">
+        <div class="modal-header"><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button><h4 class="modal-title"><i class="fa fa-edit"></i> 编辑健康记录</h4></div>
+        <div class="modal-body">
+            <form id="healthEditForm" class="form-horizontal">
+                <input type="hidden" id="editHealthId">
+                <div class="form-group"><label class="col-sm-3 control-label">心跳(次/分)</label><div class="col-sm-8"><input type="number" class="form-control" id="editHeartJump"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">血压(mmHg)</label><div class="col-sm-8"><input type="number" class="form-control" id="editBloodPressure"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">血氧(%)</label><div class="col-sm-8"><input type="number" class="form-control" id="editBloodOx"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">脉搏(次/分)</label><div class="col-sm-8"><input type="number" class="form-control" id="editPulse"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">检测时间</label><div class="col-sm-8"><input type="datetime-local" class="form-control" id="editHealthDate"></div></div>
+            </form>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">取消</button><button type="button" class="btn btn-primary" onclick="DoctorPortal.submitEditHealth()">保存</button></div>
+    </div></div>
+</div>
+
+<!-- 编辑就诊记录模态框 -->
+<div class="modal fade" id="historyEditModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document"><div class="modal-content">
+        <div class="modal-header"><button type="button" class="close" data-dismiss="modal"><span>&times;</span></button><h4 class="modal-title"><i class="fa fa-edit"></i> 编辑就诊记录</h4></div>
+        <div class="modal-body">
+            <form id="historyEditForm" class="form-horizontal">
+                <input type="hidden" id="editHistoryId">
+                <div class="form-group"><label class="col-sm-3 control-label">症状</label><div class="col-sm-8"><input type="text" class="form-control" id="editPatientSym"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">用药</label><div class="col-sm-8"><input type="text" class="form-control" id="editPatientMedicine"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">费用(元)</label><div class="col-sm-8"><input type="number" class="form-control" id="editTakeprice"></div></div>
+                <div class="form-group"><label class="col-sm-3 control-label">就诊时间</label><div class="col-sm-8"><input type="datetime-local" class="form-control" id="editHistoryDate"></div></div>
+            </form>
+        </div>
+        <div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal">取消</button><button type="button" class="btn btn-primary" onclick="DoctorPortal.submitEditHistory()">保存</button></div>
+    </div></div>
+</div>
+
+<script src="${ctxPath}/static/modular/doctor_portal/doctor_portal.js"></script>
+<script>
+    $(function(){
+        DoctorPortal.init();
+    });
+</script>
+</body>
+</html>

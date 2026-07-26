@@ -1,0 +1,67 @@
+@layout("/common/_container.html"){
+<div class="ibox float-e-margins">
+    <div class="ibox-content">
+        <div class="form-horizontal" id="chronicAddForm">
+            <div class="row">
+                <div class="col-sm-6 b-r">
+                    <#input id="patientName" name="患者姓名" underline="true"/>
+                    <#input id="patientIdcard" name="身份证号" underline="true"/>
+                    <#select id="diseaseType" name="慢病类型" underline="true">
+                        <option value="">请选择慢病类型</option>
+                        <option value="高血压">高血压</option>
+                        <option value="糖尿病">糖尿病</option>
+                        <option value="冠心病">冠心病</option>
+                        <option value="脑卒中">脑卒中</option>
+                        <option value="慢阻肺">慢阻肺</option>
+                        <option value="慢性肾病">慢性肾病</option>
+                    </#select>
+                    <#select id="riskLevel" name="初始风险等级">
+                        <option value="低风险">低风险 - 每3个月随访</option>
+                        <option value="中风险">中风险 - 每1个月随访</option>
+                        <option value="高风险">高风险 - 每2周随访</option>
+                    </#select>
+                </div>
+                <div class="col-sm-6">
+                    <#input id="diagnosisDate" name="确诊日期" type="date" underline="true"/>
+                    <#input id="doctorName" name="管理医生" underline="true"/>
+                    <#select id="status" name="管理状态" underline="true">
+                        <option value="1">管理中</option>
+                        <option value="2">已转诊</option>
+                        <option value="3">已结案</option>
+                    </#select>
+                    <#input id="remark" name="备注" underline="true"/>
+                </div>
+            </div>
+
+            <!-- 风险评估区 -->
+            <div class="row" style="margin-top:15px;">
+                <div class="col-sm-12">
+                    <div class="panel panel-default">
+                        <div class="panel-heading"><h5 style="margin:0;">初始风险评估（可选，根据临床指标自动计算）</h5></div>
+                        <div class="panel-body">
+                            <div class="row" id="riskAssessmentInputs">
+                                <div class="col-sm-12"><p class="text-muted" id="riskHint">请先选择慢病类型，将展示对应的评估指标</p></div>
+                            </div>
+                            <div class="row" style="margin-top:10px;">
+                                <div class="col-sm-12">
+                                    <#button btnCss="info" name="自动评估风险" icon="fa-calculator" clickFun="ChronicDisease.assessRiskFromForm()"/>
+                                    <span id="assessRiskResult" style="margin-left:15px;font-weight:bold;"></span>
+                                    <span id="assessFollowupInterval" style="margin-left:15px;color:#888;"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row btn-group-m-t">
+                <div class="col-sm-10">
+                    <#button btnCss="info" name="提交" id="ensure" icon="fa-check" clickFun="ChronicDisease.addSubmit()"/>
+                    <#button btnCss="danger" name="取消" id="cancel" icon="fa-eraser" clickFun="ChronicDisease.close()"/>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="${ctxPath}/static/modular/chronic_disease/chronicDisease/chronicDisease.js"></script>
+@}

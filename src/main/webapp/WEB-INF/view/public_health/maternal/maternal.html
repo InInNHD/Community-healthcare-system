@@ -1,0 +1,22 @@
+@layout("/common/_container.html"){
+<div class="row">
+    <div class="col-sm-3"><div class="ibox float-e-margins"><div class="ibox-title"><span class="label label-info pull-right">建册</span><h5>在册孕妇</h5></div><div class="ibox-content"><h1 class="no-margins" id="totalMaternal">-</h1></div></div></div>
+    <div class="col-sm-3"><div class="ibox float-e-margins"><div class="ibox-title"><span class="label label-danger pull-right">高危</span><h5>高危妊娠</h5></div><div class="ibox-content"><h1 class="no-margins" id="highRisk">-</h1></div></div></div>
+    <div class="col-sm-3"><div class="ibox float-e-margins"><div class="ibox-title"><span class="label label-warning pull-right">访视</span><h5>产后访视</h5></div><div class="ibox-content"><h1 class="no-margins" id="ppVisits">-</h1></div></div></div>
+    <div class="col-sm-3"><div class="ibox float-e-margins"><div class="ibox-title"><span class="label label-success pull-right">儿童</span><h5>儿童体检</h5></div><div class="ibox-content"><h1 class="no-margins" id="childCheckups">-</h1></div></div></div>
+</div>
+<div class="row"><div class="col-sm-12"><div class="ibox float-e-margins"><div class="ibox-title"><h5>孕产妇建册管理</h5></div>
+<div class="ibox-content"><div class="row row-lg"><div class="col-sm-12">
+<div class="row"><div class="col-sm-3"><#NameCon id="patientName" name="姓名"/></div><div class="col-sm-3"><#button name="搜索" icon="fa-search" clickFun="Maternal.search()"/></div></div>
+<div class="hidden-xs" id="MaternalTableToolbar" role="group">
+<#button name="新建册" icon="fa-plus" clickFun="Maternal.openAdd()"/>
+<#button name="编辑" icon="fa-edit" clickFun="Maternal.openEdit()" space="true"/>
+<#button name="删除" icon="fa-remove" clickFun="Maternal.delete()" space="true"/>
+<#button name="产后访视" icon="fa-heartbeat" clickFun="Maternal.openVisit()" space="true"/>
+<#button name="高危管理" icon="fa-exclamation-triangle" clickFun="Maternal.highRiskList()" space="true"/>
+<#button name="儿童体检" icon="fa-child" clickFun="Maternal.childCheckupList()" space="true"/>
+</div>
+<#table id="MaternalTable"/>
+</div></div></div></div></div></div>
+<script src="${ctxPath}/static/modular/public_health/maternal.js"></script>
+@}

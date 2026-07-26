@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>居民端 - 社区医疗服务平台管理系统</title>
+    <link rel="shortcut icon" href="${ctxPath}/static/favicon.ico">
+    <link href="${ctxPath}/static/css/bootstrap.min.css?v=3.3.6" rel="stylesheet">
+    <link href="${ctxPath}/static/css/font-awesome.min.css?v=4.4.0" rel="stylesheet">
+    <link href="${ctxPath}/static/css/portal.css" rel="stylesheet">
+    <script src="${ctxPath}/static/js/jquery.min.js?v=2.1.4"></script>
+    <script src="${ctxPath}/static/js/bootstrap.min.js?v=3.3.6"></script>
+    <script src="${ctxPath}/static/js/plugins/layer/layer.js"></script>
+    <script src="${ctxPath}/static/js/common/Feng.js"></script>
+</head>
+<body class="portal-body">
+
+<!-- 顶部导航栏 -->
+<nav class="navbar navbar-default portal-navbar patient-theme">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#patientNavbar">
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="${ctxPath}/patient_portal">
+                <i class="fa fa-home brand-icon"></i>居民健康服务
+            </a>
+        </div>
+        <div class="collapse navbar-collapse" id="patientNavbar">
+            <ul class="nav navbar-nav">
+                <li class="active"><a href="#" onclick="PatientPortal.switchTab('dashboard')"><i class="fa fa-tachometer"></i> 我的首页</a></li>
+                <li><a href="#" onclick="PatientPortal.switchTab('consultation')"><i class="fa fa-hospital-o"></i> 就诊台</a></li>
+                <li><a href="#" onclick="PatientPortal.switchTab('health')"><i class="fa fa-heartbeat"></i> 健康档案</a></li>
+                <li><a href="#" onclick="PatientPortal.switchTab('appointments')"><i class="fa fa-calendar-check-o"></i> 我的预约</a></li>
+                <li><a href="#" onclick="PatientPortal.switchTab('history')"><i class="fa fa-file-text-o"></i> 就诊记录</a></li>
+                <li><a href="#" onclick="PatientPortal.switchTab('medicine')"><i class="fa fa-medkit"></i> 药品查询</a></li>
+                <li><a href="#" onclick="PatientPortal.switchTab('chronic')"><i class="fa fa-heartbeat"></i> 慢病管理</a></li>
+                <li><a href="#" onclick="PatientPortal.switchTab('public_health')"><i class="fa fa-ambulance"></i> 公共卫生</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+                <li><span class="user-info"><i class="fa fa-user"></i>${userName!} | ${userRole!}</span></li>
+                <li><a href="${ctxPath}/logout"><i class="fa fa-sign-out"></i> 退出</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- 主内容区 -->
+<div class="container-fluid" style="padding: 20px 25px;">
+
+    <!-- ===== 我的首页面板 ===== -->
+    <div id="panel-dashboard">
+        <!-- 欢迎横幅 -->
+        <div class="portal-card" style="background: linear-gradient(135deg, #e0f7fa 0%, #e8eaf6 100%); border:none;">
+            <div class="card-body" style="padding:30px;">
+                <h2 style="margin:0 0 8px;color:#333;font-weight:600;">
+                    <i class="fa fa-smile-o" style="color:#5b86e5;"></i> 您好，${userName!}
+                </h2>
+                <p style="margin:0;color:#666;font-size:15px;">欢迎使用社区健康服务，祝您身体健康！</p>
+            </div>
+        </div>
+
+        <!-- 快捷功能入口 -->
+        <div class="row" style="margin-bottom:5px;">
+            <div class="col-xs-3 col-sm-3">
+                <div class="quick-entry" onclick="PatientPortal.switchTab('consultation');">
+                    <div class="quick-icon" style="background:linear-gradient(135deg,#8e2de2,#4a00e0);"><i class="fa fa-hospital-o"></i></div>
+                    <span>就诊台</span>
+                </div>
+            </div>
+            <div class="col-xs-3 col-sm-3">
+                <div class="quick-entry" onclick="PatientPortal.switchTab('appointments');">
+                    <div class="quick-icon" style="background:linear-gradient(135deg,#36d1dc,#5b86e5);"><i class="fa fa-calendar-plus-o"></i></div>
+                    <span>预约挂号</span>
+                </div>
+            </div>
+            <div class="col-xs-3 col-sm-3">
+                <div class="quick-entry" onclick="PatientPortal.switchTab('medicine');">
+                    <div class="quick-icon" style="background:linear-gradient(135deg,#11998e,#38ef7d);"><i class="fa fa-medkit"></i></div>
+                    <span>用药指南</span>
+                </div>
+            </div>
+            <div class="col-xs-3 col-sm-3">
+                <div class="quick-entry" onclick="PatientPortal.switchTab('health');">
+                    <div class="quick-icon" style="background:linear-gradient(135deg,#f7971e,#ffd200);"><i class="fa fa-heartbeat"></i></div>
+                    <span>健康档案</span>
+                </div>
+            </div>
+            <div class="col-xs-3 col-sm-3">
+                <div class="quick-entry" onclick="PatientPortal.openHealthTips();">
+                    <div class="quick-icon" style="background:linear-gradient(135deg,#8e2de2,#4a00e0);"><i class="fa fa-lightbulb-o"></i></div>
+                    <span>健康贴士</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="row">
+            <div class="col-sm-3">
+                <div class="stat-card">
+                    <div class="stat-icon green"><i class="fa fa-heartbeat"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number">${myHealthCount!0}</div>
+                        <div class="stat-label">健康记录</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card">
+                    <div class="stat-icon blue"><i class="fa fa-calendar-check-o"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number">${myAppointmentCount!0}</div>
+                        <div class="stat-label">预约记录</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card">
+                    <div class="stat-icon orange"><i class="fa fa-file-text-o"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number">${myHistoryCount!0}</div>
+                        <div class="stat-label">就诊记录</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <div class="stat-card">
+                    <div class="stat-icon purple"><i class="fa fa-medkit"></i></div>
+                    <div class="stat-info">
+                        <div class="stat-number">${medicineCount!0}</div>
+                        <div class="stat-label">可查药品</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 最新健康 + 最近预约 -->
+        <div class="row">
+            <div class="col-sm-6">
+                <div class="portal-card">
+                    <div class="card-header">
+                        <h4><i class="fa fa-heartbeat"></i>最新健康数据</h4>
+                        <a href="#" onclick="PatientPortal.switchTab('health')" style="font-size:13px;">查看全部 &raquo;</a>
+                    </div>
+                    <div class="card-body" id="dashboardHealth">
+                        <div class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="portal-card">
+                    <div class="card-header">
+                        <h4><i class="fa fa-calendar"></i>最近预约</h4>
+                        <a href="#" onclick="PatientPortal.switchTab('appointments')" style="font-size:13px;">查看全部 &raquo;</a>
+                    </div>
+                    <div class="card-body">
+                        <table class="portal-table">
+                            <thead>
+                                <tr>
+                                    <th>医生</th>
+                                    <th>预约时间</th>
+                                    <th>地点</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboardAppointments">
+                                <tr><td colspan="3" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 就诊台面板 ===== -->
+    <div id="panel-consultation" style="display:none;">
+        <div class="row">
+            <!-- 就诊状态卡片 -->
+            <div class="col-sm-6">
+                <div class="portal-card" id="patientWaitingCard">
+                    <div class="card-header" style="background:linear-gradient(135deg,#f7971e,#ffd200);border-radius:10px 10px 0 0;">
+                        <h4 style="color:#fff;"><i class="fa fa-clock-o"></i> 候诊中</h4>
+                    </div>
+                    <div class="card-body" id="patientWaitingBody">
+                        <div class="empty-data"><i class="fa fa-spinner fa-spin"></i><p>加载中...</p></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <div class="portal-card" id="patientInProgressCard" style="display:none;">
+                    <div class="card-header" style="background:linear-gradient(135deg,#1a9bfc,#0d6efd);border-radius:10px 10px 0 0;">
+                        <h4 style="color:#fff;"><i class="fa fa-stethoscope"></i> 就诊中</h4>
+                    </div>
+                    <div class="card-body" id="patientInProgressBody">
+                    </div>
+                </div>
+                <div class="portal-card" id="patientNoConsultCard">
+                    <div class="card-body" style="padding:40px 20px;text-align:center;">
+                        <i class="fa fa-check-circle" style="font-size:48px;color:#11998e;"></i>
+                        <h4 style="color:#666;margin-top:12px;">暂无进行中的就诊</h4>
+                        <p style="color:#999;font-size:13px;">您当前没有正在进行的会诊</p>
+                        <button class="btn btn-primary" onclick="PatientPortal.switchTab('appointments')" style="margin-top:12px;"><i class="fa fa-calendar-plus-o"></i> 去预约挂号</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 最近就诊记录 -->
+        <div class="portal-card" style="margin-top:5px;">
+            <div class="card-header">
+                <h4><i class="fa fa-file-text-o"></i>最近就诊记录</h4>
+                <a href="#" onclick="PatientPortal.switchTab('history')" style="font-size:13px;">查看全部 &raquo;</a>
+            </div>
+            <div class="card-body">
+                <table class="portal-table">
+                    <thead>
+                        <tr>
+                            <th>医生</th>
+                            <th>症状</th>
+                            <th>用药</th>
+                            <th>费用(元)</th>
+                            <th>就诊时间</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentHistoryTable">
+                        <tr><td colspan="5" class="empty-data">暂无就诊记录</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 健康档案面板 ===== -->
+    <div id="panel-health" style="display:none;">
+        <div class="portal-card">
+            <div class="card-header">
+                <h4><i class="fa fa-heartbeat"></i>我的健康档案</h4>
+            </div>
+            <div class="card-body">
+                <table class="portal-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>心跳(次/分)</th>
+                            <th>血压(mmHg)</th>
+                            <th>血氧(%)</th>
+                            <th>脉搏(次/分)</th>
+                            <th>检测时间</th>
+                            <th>状态</th>
+                        </tr>
+                    </thead>
+                    <tbody id="healthTable">
+                        <tr><td colspan="7" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 预约挂号面板 ===== -->
+    <div id="panel-appointments" style="display:none;">
+        <!-- 医生卡片区 -->
+        <div class="portal-card">
+            <div class="card-header">
+                <h4><i class="fa fa-user-md"></i>预约挂号</h4>
+                <div>
+                    <div class="medicine-search-box">
+                        <input type="text" class="form-control input-sm" id="doctorSearchInput" placeholder="搜索医生姓名..." oninput="PatientPortal.filterDoctors()">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="medicine-category-bar" id="deptCategoryBar">
+                    <span class="category-tag active" onclick="PatientPortal.filterByDept('all')">全部</span>
+                </div>
+                <div class="row" id="doctorCardGrid">
+                    <div class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</div>
+                </div>
+            </div>
+        </div>
+        <!-- 我的预约记录 -->
+        <div class="portal-card">
+            <div class="card-header">
+                <h4><i class="fa fa-calendar-check-o"></i>我的预约</h4>
+            </div>
+            <div class="card-body">
+                <!-- 预约状态分类标签 -->
+                <div class="appoint-status-bar" id="appointStatusBar">
+                    <span class="appoint-status-tab active" data-status="upcoming" onclick="PatientPortal.switchAppointTab('upcoming')">
+                        <i class="fa fa-clock-o"></i> 待参与 <em id="upcomingCount">0</em>
+                    </span>
+                    <span class="appoint-status-tab" data-status="completed" onclick="PatientPortal.switchAppointTab('completed')">
+                        <i class="fa fa-check-circle"></i> 已完成 <em id="completedCount">0</em>
+                    </span>
+                    <span class="appoint-status-tab" data-status="overdue" onclick="PatientPortal.switchAppointTab('overdue')">
+                        <i class="fa fa-exclamation-circle"></i> 已逾期 <em id="overdueCount">0</em>
+                    </span>
+                </div>
+                <!-- 待参与会诊 -->
+                <div class="appoint-status-panel" id="panel-upcoming">
+                    <table class="portal-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>医生</th>
+                                <th>预约时间</th>
+                                <th>预约地点</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="upcomingTable">
+                            <tr><td colspan="5" class="empty-data">暂无待参与的会诊</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- 已完成会诊 -->
+                <div class="appoint-status-panel" id="panel-completed" style="display:none;">
+                    <table class="portal-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>医生</th>
+                                <th>预约时间</th>
+                                <th>预约地点</th>
+                                <th>状态</th>
+                            </tr>
+                        </thead>
+                        <tbody id="completedTable">
+                            <tr><td colspan="5" class="empty-data">暂无已完成的会诊</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- 逾期会诊 -->
+                <div class="appoint-status-panel" id="panel-overdue" style="display:none;">
+                    <table class="portal-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>医生</th>
+                                <th>预约时间</th>
+                                <th>预约地点</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="overdueTable">
+                            <tr><td colspan="5" class="empty-data">暂无逾期会诊</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 就诊记录面板 ===== -->
+    <div id="panel-history" style="display:none;">
+        <div class="portal-card">
+            <div class="card-header">
+                <h4><i class="fa fa-file-text-o"></i>我的就诊记录</h4>
+                <div>
+                    <button class="btn btn-sm btn-info" onclick="PatientPortal.exportMyHistories()"><i class="fa fa-download"></i> 批量导出</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <table class="portal-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>症状</th>
+                            <th>主治医生</th>
+                            <th>用药</th>
+                            <th>费用(元)</th>
+                            <th>就诊时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTable">
+                        <tr><td colspan="7" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 药品查询面板 ===== -->
+    <div id="panel-medicine" style="display:none;">
+        <div class="portal-card">
+            <div class="card-header">
+                <h4><i class="fa fa-medkit"></i>药品查询</h4>
+                <div>
+                    <div class="medicine-search-box">
+                        <input type="text" class="form-control input-sm" id="medicineSearchInput" placeholder="搜索药品名称..." oninput="PatientPortal.filterMedicines()">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- 分类筛选标签 -->
+                <div class="medicine-category-bar" id="medicineCategoryBar">
+                    <span class="category-tag active" onclick="PatientPortal.filterByCategory('all')">全部</span>
+                </div>
+                <!-- 药品卡片网格 -->
+                <div class="row" id="medicineCardGrid">
+                    <div class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 慢病管理面板 ===== -->
+    <div id="panel-chronic" style="display:none;">
+        <!-- 我的慢病档案 -->
+        <div class="portal-card">
+            <div class="card-header">
+                <h4><i class="fa fa-heartbeat"></i>我的慢病档案</h4>
+            </div>
+            <div class="card-body">
+                <div class="row" id="myChronicCards">
+                    <div class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 随访计划 -->
+        <div class="portal-card" style="margin-top:15px;">
+            <div class="card-header">
+                <h4><i class="fa fa-calendar"></i>随访计划</h4>
+            </div>
+            <div class="card-body">
+                <table class="portal-table">
+                    <thead>
+                        <tr>
+                            <th>慢病类型</th>
+                            <th>计划随访日期</th>
+                            <th>随访方式</th>
+                            <th>负责医生</th>
+                            <th>状态</th>
+                        </tr>
+                    </thead>
+                    <tbody id="myChronicPlanTable">
+                        <tr><td colspan="5" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 随访记录 -->
+        <div class="portal-card" style="margin-top:15px;">
+            <div class="card-header">
+                <h4><i class="fa fa-file-text-o"></i>随访记录</h4>
+            </div>
+            <div class="card-body">
+                <table class="portal-table">
+                    <thead>
+                        <tr>
+                            <th>随访日期</th>
+                            <th>随访医生</th>
+                            <th>随访方式</th>
+                            <th>症状</th>
+                            <th>血压</th>
+                            <th>血糖</th>
+                            <th>心率</th>
+                            <th>依从性</th>
+                            <th>风险评级</th>
+                            <th>建议</th>
+                        </tr>
+                    </thead>
+                    <tbody id="myChronicFollowupTable">
+                        <tr><td colspan="10" class="empty-data"><i class="fa fa-spinner fa-spin"></i> 加载中...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- 预约挂号详情模态框 -->
+<div class="modal fade" id="doctorDetailModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,#36d1dc,#5b86e5);color:#fff;border-radius:6px 6px 0 0;">
+                <button type="button" class="close" data-dismiss="modal" style="color:#fff;"><span>&times;</span></button>
+                <h4 class="modal-title" style="color:#fff;"><i class="fa fa-calendar-plus-o"></i> 预约挂号</h4>
+            </div>
+            <div class="modal-body">
+                <div class="doctor-detail-header">
+                    <div class="doctor-detail-avatar" id="detailDoctorAvatar">
+                        <i class="fa fa-user-md"></i>
+                    </div>
+                    <div class="doctor-detail-info">
+                        <h3 id="detailDoctorName"></h3>
+                        <div class="doctor-detail-tags">
+                            <span class="doctor-detail-dept" id="detailDoctorDept"></span>
+                            <span class="doctor-detail-title-tag" id="detailDoctorTitle"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="doctor-detail-body">
+                    <div class="doctor-detail-row">
+                        <span class="doctor-detail-label"><i class="fa fa-star"></i> 专长</span>
+                        <span id="detailDoctorSpecialty"></span>
+                    </div>
+                    <div class="doctor-detail-row">
+                        <span class="doctor-detail-label"><i class="fa fa-clock-o"></i> 出诊</span>
+                        <span id="detailDoctorSchedule"></span>
+                    </div>
+                    <div class="doctor-detail-row">
+                        <span class="doctor-detail-label"><i class="fa fa-map-marker"></i> 诊室</span>
+                        <span id="detailDoctorOffice"></span>
+                    </div>
+                </div>
+                <div class="doctor-detail-booking">
+                    <h5><i class="fa fa-calendar"></i> 选择预约日期</h5>
+                    <input type="date" class="form-control" id="addPointDate" onchange="PatientPortal.onDateChange()">
+                    <h5 style="margin-top:15px;"><i class="fa fa-clock-o"></i> 选择预约时段</h5>
+                    <div id="addTimeSlots" class="time-slots-container">
+                        <span class="time-slot-hint">请先选择日期</span>
+                    </div>
+                    <input type="hidden" id="addPointTime" name="pointDate">
+                    <input type="hidden" id="addPointPlace" name="pointPlace">
+                    <input type="hidden" id="addDoctorName" name="doctorName">
+                    <input type="hidden" id="addDoctorId" name="doctorId">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="PatientPortal.submitAppointment()"><i class="fa fa-check"></i> 确认预约</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑预约模态框 -->
+<div class="modal fade" id="appointmentEditModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                <h4 class="modal-title"><i class="fa fa-edit"></i> 编辑预约</h4>
+            </div>
+            <div class="modal-body">
+                <form id="appointmentEditForm" class="form-horizontal">
+                    <input type="hidden" id="editAppointmentId">
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">预约医生</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="editDoctorName" name="doctorName" readonly style="background:#f5f5f5;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">预约时间</label>
+                        <div class="col-sm-8">
+                            <input type="datetime-local" class="form-control" id="editPointDate" name="pointDate" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">预约地点</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="editPointPlace" name="pointPlace" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="PatientPortal.submitEditAppointment()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 新增药品模态框 -->
+<div class="modal fade" id="medicineAddModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                <h4 class="modal-title"><i class="fa fa-medkit"></i> 新增药品</h4>
+            </div>
+            <div class="modal-body">
+                <form id="medicineAddForm" class="form-horizontal">
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">药品名称</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addMedicineName" name="medicineName" placeholder="请输入药品名称" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">价格(元)</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="addMedicinePrice" name="medicinePrice" placeholder="请输入价格" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">功效</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addMedicineValue" name="medicineValue" placeholder="请输入功效描述" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">药品分类</label>
+                        <div class="col-sm-8">
+                            <select class="form-control" id="addMedicineCategory" name="medicineCategory">
+                                <option value="感冒用药">感冒用药</option>
+                                <option value="解热镇痛">解热镇痛</option>
+                                <option value="抗菌消炎">抗菌消炎</option>
+                                <option value="清热解毒">清热解毒</option>
+                                <option value="外用药">外用药</option>
+                                <option value="滋补养生">滋补养生</option>
+                                <option value="肠胃用药">肠胃用药</option>
+                                <option value="维生素">维生素</option>
+                                <option value="呼吸用药">呼吸用药</option>
+                                <option value="心血管药">心血管药</option>
+                                <option value="眼耳鼻喉">眼耳鼻喉</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">图片路径</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="addMedicineImage" name="medicineImage" placeholder="如 /static/img/medicine/cold.svg">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">库存余量</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="addMedicineStock" name="medicineStock" placeholder="请输入库存数量" min="0" value="0" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="PatientPortal.submitMedicine()">提交</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 编辑药品模态框 -->
+<div class="modal fade" id="medicineEditModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                <h4 class="modal-title"><i class="fa fa-edit"></i> 编辑药品</h4>
+            </div>
+            <div class="modal-body">
+                <form id="medicineEditForm" class="form-horizontal">
+                    <input type="hidden" id="editMedicineId">
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">药品名称</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="editMedicineName" name="medicineName" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">价格(元)</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="editMedicinePrice" name="medicinePrice" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">功效</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="editMedicineValue" name="medicineValue" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">药品分类</label>
+                        <div class="col-sm-8">
+                            <select class="form-control" id="editMedicineCategory" name="medicineCategory">
+                                <option value="感冒用药">感冒用药</option>
+                                <option value="解热镇痛">解热镇痛</option>
+                                <option value="抗菌消炎">抗菌消炎</option>
+                                <option value="清热解毒">清热解毒</option>
+                                <option value="外用药">外用药</option>
+                                <option value="滋补养生">滋补养生</option>
+                                <option value="肠胃用药">肠胃用药</option>
+                                <option value="维生素">维生素</option>
+                                <option value="呼吸用药">呼吸用药</option>
+                                <option value="心血管药">心血管药</option>
+                                <option value="眼耳鼻喉">眼耳鼻喉</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">图片路径</label>
+                        <div class="col-sm-8">
+                            <input type="text" class="form-control" id="editMedicineImage" name="medicineImage">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">库存余量</label>
+                        <div class="col-sm-8">
+                            <input type="number" class="form-control" id="editMedicineStock" name="medicineStock" placeholder="请输入库存数量" min="0" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-primary" onclick="PatientPortal.submitEditMedicine()">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 健康贴士模态框 -->
+<div class="modal fade" id="healthTipsModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,#8e2de2,#4a00e0);color:#fff;border-radius:6px 6px 0 0;">
+                <button type="button" class="close" data-dismiss="modal" style="color:#fff;"><span>&times;</span></button>
+                <h4 class="modal-title" style="color:#fff;"><i class="fa fa-lightbulb-o"></i> 健康贴士</h4>
+            </div>
+            <div class="modal-body" style="padding:0;">
+                <div class="tips-list" id="healthTipsList">
+                    <div class="empty-data"><i class="fa fa-spinner fa-spin"></i><p>加载中...</p></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">我知道了</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 紧急呼叫模态框 -->
+<div class="modal fade" id="emergencyCallModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,#eb3349,#ff6b6b);color:#fff;border-radius:6px 6px 0 0;">
+                <button type="button" class="close" data-dismiss="modal" style="color:#fff;"><span>&times;</span></button>
+                <h4 class="modal-title" style="color:#fff;"><i class="fa fa-phone"></i> 紧急呼叫</h4>
+            </div>
+            <div class="modal-body" style="padding:20px;">
+                <div style="text-align:center;margin-bottom:20px;">
+                    <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#eb3349,#ff6b6b);margin:0 auto 15px;display:flex;align-items:center;justify-content:center;">
+                        <i class="fa fa-exclamation-triangle" style="font-size:36px;color:#fff;"></i>
+                    </div>
+                    <p style="font-size:15px;color:#666;">遇到紧急情况，请立即拨打以下电话：</p>
+                </div>
+                <div class="emergency-list">
+                    <div class="emergency-item" onclick="PatientPortal.dialNumber('120')">
+                        <div class="emergency-icon" style="background:#ffebee;color:#c62828;"><i class="fa fa-ambulance"></i></div>
+                        <div class="emergency-info">
+                            <h5>急救中心</h5>
+                            <span class="emergency-phone">120</span>
+                        </div>
+                        <i class="fa fa-phone emergency-dial"></i>
+                    </div>
+                    <div class="emergency-item" onclick="PatientPortal.dialNumber('110')">
+                        <div class="emergency-icon" style="background:#e3f2fd;color:#1565c0;"><i class="fa fa-shield"></i></div>
+                        <div class="emergency-info">
+                            <h5>报警电话</h5>
+                            <span class="emergency-phone">110</span>
+                        </div>
+                        <i class="fa fa-phone emergency-dial"></i>
+                    </div>
+                    <div class="emergency-item" onclick="PatientPortal.dialNumber('119')">
+                        <div class="emergency-icon" style="background:#fff3e0;color:#e65100;"><i class="fa fa-fire"></i></div>
+                        <div class="emergency-info">
+                            <h5>消防电话</h5>
+                            <span class="emergency-phone">119</span>
+                        </div>
+                        <i class="fa fa-phone emergency-dial"></i>
+                    </div>
+                    <div class="emergency-item" onclick="PatientPortal.dialNumber('12320')">
+                        <div class="emergency-icon" style="background:#e8f5e9;color:#2e7d32;"><i class="fa fa-hospital-o"></i></div>
+                        <div class="emergency-info">
+                            <h5>卫生热线</h5>
+                            <span class="emergency-phone">12320</span>
+                        </div>
+                        <i class="fa fa-phone emergency-dial"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 页脚 -->
+<footer style="text-align:center;padding:20px;color:#bbb;font-size:12px;background:#f3f6fb;">
+    社区医疗服务平台管理系统 - 居民端&copy; 2026
+</footer>
+
+<!-- ===== 公共卫生面板（居民个人） ===== -->
+<div id="panel-public_health" style="display:none;">
+    <div class="row">
+        <div class="col-sm-6">
+            <div class="portal-card"><div class="card-header"><h4><i class="fa fa-syringe"></i> 我的接种记录</h4></div><div class="card-body" style="max-height:250px;overflow-y:auto;">
+                <table class="table table-striped table-condensed"><thead><tr><th>疫苗名称</th><th>剂次</th><th>接种日期</th><th>接种部位</th></tr></thead><tbody id="phMyVaccTable"></tbody></table>
+            </div></div>
+        </div>
+        <div class="col-sm-6">
+            <div class="portal-card"><div class="card-header"><h4><i class="fa fa-user-md"></i> 我的健康体检</h4></div><div class="card-body" style="max-height:250px;overflow-y:auto;">
+                <table class="table table-striped table-condensed"><thead><tr><th>体检日期</th><th>BMI</th><th>血压</th><th>血糖</th><th>健康评价</th></tr></thead><tbody id="phMyCheckupTable"></tbody></table>
+            </div></div>
+        </div>
+    </div>
+</div>
+
+<script src="${ctxPath}/static/modular/patient_portal/patient_portal.js"></script>
+<script>
+    $(function(){
+        PatientPortal.init();
+    });
+</script>
+</body>
+</html>

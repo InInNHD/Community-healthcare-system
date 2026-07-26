@@ -1,0 +1,29 @@
+@layout("/common/_container.html"){
+<div class="ibox float-e-margins"><div class="ibox-content"><div class="form-horizontal">
+<div class="row"><div class="col-sm-6 b-r">
+<#input id="patientName" name="姓名" underline="true"/>
+<#input id="patientIdcard" name="身份证号" underline="true"/>
+<#input id="age" name="年龄" underline="true"/>
+<#select id="gender" name="性别" underline="true"><option value="男">男</option><option value="女">女</option></#select>
+<#input id="checkupDate" name="体检日期" type="date" underline="true"/>
+<#input id="height" name="身高(cm)" underline="true"/>
+<#input id="weight" name="体重(kg)" underline="true"/>
+<#input id="bloodPressure" name="血压" underline="true"/>
+<#input id="heartRate" name="心率" underline="true"/>
+</div><div class="col-sm-6">
+<#input id="bloodSugar" name="空腹血糖" underline="true"/>
+<#input id="bloodLipid" name="血脂" underline="true"/>
+<#input id="liverFunction" name="肝功能" underline="true"/>
+<#input id="kidneyFunction" name="肾功能" underline="true"/>
+<#input id="ecg" name="心电图" underline="true"/>
+<#input id="bUltrasound" name="B超" underline="true"/>
+<#input id="urineRoutine" name="尿常规" underline="true"/>
+<#select id="selfCareAssessment" name="自理能力" underline="true"><option value="完全自理">完全自理</option><option value="部分自理">部分自理</option><option value="不能自理">不能自理</option></#select>
+</div></div>
+<div class="row btn-group-m-t"><div class="col-sm-10">
+<#button btnCss="info" name="提交" icon="fa-check" clickFun="Elderly.submitAdd()"/>
+<#button btnCss="danger" name="取消" icon="fa-eraser" clickFun="Elderly.close()"/>
+</div></div>
+</div></div></div>
+<script src="${ctxPath}/static/modular/public_health/elderly.js"></script>
+@}

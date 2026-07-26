@@ -1,0 +1,21 @@
+@layout("/common/_container.html"){
+<div class="row">
+    <div class="col-sm-3"><div class="ibox float-e-margins"><div class="ibox-title"><span class="label label-info pull-right">报告</span><h5>累计报告</h5></div><div class="ibox-content"><h1 class="no-margins" id="totalReports">-</h1></div></div></div>
+    <div class="col-sm-3"><div class="ibox float-e-margins"><div class="ibox-title"><span class="label label-danger pull-right">甲类</span><h5>甲类传染病</h5></div><div class="ibox-content"><h1 class="no-margins" id="categoryA">-</h1></div></div></div>
+    <div class="col-sm-3"><div class="ibox float-e-margins"><div class="ibox-title"><span class="label label-warning pull-right">乙类</span><h5>乙类传染病</h5></div><div class="ibox-content"><h1 class="no-margins" id="categoryB">-</h1></div></div></div>
+    <div class="col-sm-3"><div class="ibox float-e-margins"><div class="ibox-title"><span class="label label-success pull-right">丙类</span><h5>丙类传染病</h5></div><div class="ibox-content"><h1 class="no-margins" id="categoryC">-</h1></div></div></div>
+</div>
+<div class="row"><div class="col-sm-12"><div class="ibox float-e-margins"><div class="ibox-title"><h5>传染病报告管理</h5></div>
+<div class="ibox-content"><div class="row row-lg"><div class="col-sm-12">
+<div class="row"><div class="col-sm-3"><#NameCon id="diseaseType" name="病种"/></div><div class="col-sm-2"><#select id="diseaseCategory" name="类别"><option value="">全部</option><option value="甲">甲类</option><option value="乙">乙类</option><option value="丙">丙类</option></#select></div><div class="col-sm-3"><#button name="搜索" icon="fa-search" clickFun="Infectious.search()"/></div></div>
+<div class="hidden-xs" id="InfectiousTableToolbar" role="group">
+<#button name="新增报告" icon="fa-plus" clickFun="Infectious.openAdd()"/>
+<#button name="编辑" icon="fa-edit" clickFun="Infectious.openEdit()" space="true"/>
+<#button name="删除" icon="fa-remove" clickFun="Infectious.delete()" space="true"/>
+<#button name="审核" icon="fa-check-circle" clickFun="Infectious.review()" space="true"/>
+<#button name="统计" icon="fa-pie-chart" clickFun="Infectious.viewStats()" space="true"/>
+</div>
+<#table id="InfectiousTable"/>
+</div></div></div></div></div></div>
+<script src="${ctxPath}/static/modular/public_health/infectious.js"></script>
+@}

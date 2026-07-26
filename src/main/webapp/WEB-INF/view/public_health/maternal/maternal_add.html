@@ -1,0 +1,23 @@
+@layout("/common/_container.html"){
+<div class="ibox float-e-margins"><div class="ibox-content"><div class="form-horizontal">
+<div class="row"><div class="col-sm-6 b-r">
+<#input id="patientName" name="姓名" underline="true"/>
+<#input id="patientIdcard" name="身份证号" underline="true"/>
+<#input id="age" name="年龄" underline="true"/>
+<#input id="lmpDate" name="末次月经" type="date" underline="true"/>
+<#input id="eddDate" name="预产期" type="date" underline="true"/>
+</div><div class="col-sm-6">
+<#input id="gravidity" name="孕次" underline="true"/>
+<#input id="parity" name="产次" underline="true"/>
+<#input id="bloodType" name="血型" underline="true"/>
+<#select id="highRiskFlag" name="高危妊娠" underline="true"><option value="0">否</option><option value="1">是</option></#select>
+<#input id="highRiskReason" name="高危因素" underline="true"/>
+</div></div>
+<div class="row"><div class="col-sm-12"><#input id="remark" name="备注"/></div></div>
+<div class="row btn-group-m-t"><div class="col-sm-10">
+<#button btnCss="info" name="提交" icon="fa-check" clickFun="Maternal.submitAdd()"/>
+<#button btnCss="danger" name="取消" icon="fa-eraser" clickFun="Maternal.close()"/>
+</div></div>
+</div></div></div>
+<script src="${ctxPath}/static/modular/public_health/maternal.js"></script>
+@}

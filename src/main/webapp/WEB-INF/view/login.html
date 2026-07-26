@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>社区医疗服务平台管理系统 - 登录</title>
+
+    <link rel="shortcut icon" href="${ctxPath}/static/favicon.ico">
+    <link href="${ctxPath}/static/css/bootstrap.min.css?v=3.3.6" rel="stylesheet">
+    <link href="${ctxPath}/static/css/font-awesome.css?v=4.4.0" rel="stylesheet">
+    <script>if (window.top !== window.self) {
+        window.top.location = window.location;
+    }</script>
+    <script src="${ctxPath}/static/js/jquery.min.js?v=2.1.4"></script>
+    <script src="${ctxPath}/static/js/bootstrap.min.js?v=3.3.6"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+        }
+        .login-wrapper {
+            max-width: 520px;
+            margin: 0 auto;
+            padding-top: 60px;
+        }
+        .login-header {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 30px;
+        }
+        .login-header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .login-header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .role-cards {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .role-card {
+            flex: 1;
+            background: #fff;
+            border-radius: 12px;
+            padding: 22px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .role-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        .role-card.active {
+            border-color: #4a90e2;
+            box-shadow: 0 8px 25px rgba(74,144,226,0.3);
+        }
+        .role-card .role-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 24px;
+            color: #fff;
+        }
+        .role-card.admin .role-icon {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+        .role-card.doctor .role-icon {
+            background: linear-gradient(135deg, #1a9bfc, #0d6efd);
+        }
+        .role-card.patient .role-icon {
+            background: linear-gradient(135deg, #36d1dc, #5b86e5);
+        }
+        .role-card .role-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        .role-card .role-desc {
+            font-size: 12px;
+            color: #999;
+        }
+        .login-box {
+            background: #fff;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .login-box .form-control {
+            height: 44px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .login-box .btn-login {
+            height: 44px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            letter-spacing: 4px;
+        }
+        .login-box .btn-login:hover {
+            background: linear-gradient(135deg, #5a6fd6, #6a4292);
+        }
+        .tips-error {
+            color: #e74c3c;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        \@media (max-width: 520px) {
+            .login-wrapper {
+                padding: 30px 15px;
+            }
+            .role-cards {
+                gap: 8px;
+            }
+            .role-card {
+                padding: 16px 6px;
+            }
+            .role-card .role-icon {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
+            }
+            .role-card .role-title {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="login-wrapper">
+    <!-- 标题 -->
+    <div class="login-header">
+        <h1>社区医疗服务平台管理系统</h1>
+        <p>请选择您的身份并登录</p>
+    </div>
+
+    <!-- 角色选择卡片 -->
+    <div class="role-cards">
+        <div class="role-card admin" onclick="selectRole('admin', this)" title="管理员端">
+            <div class="role-icon"><i class="fa fa-shield"></i></div>
+            <div class="role-title">管理员端</div>
+            <div class="role-desc">系统管理</div>
+        </div>
+        <div class="role-card doctor" onclick="selectRole('doctor', this)" title="医护端">
+            <div class="role-icon"><i class="fa fa-stethoscope"></i></div>
+            <div class="role-title">医护端</div>
+            <div class="role-desc">医生工作台</div>
+        </div>
+        <div class="role-card patient" onclick="selectRole('patient', this)" title="居民端">
+            <div class="role-icon"><i class="fa fa-user"></i></div>
+            <div class="role-title">居民端</div>
+            <div class="role-desc">健康服务</div>
+        </div>
+    </div>
+
+    <!-- 登录表单 -->
+    <div class="login-box">
+        <h4 style="text-align:center;color: red;" class="tips-error">${tips!}</h4>
+        <form id="loginForm" role="form" action="${ctxPath}/login" method="post">
+            <div class="form-group">
+                <div class="input-group">
+                    <span class="input-group-addon"><i class="fa fa-user"></i></span>
+                    <input type="text" name="username" id="username" class="form-control" placeholder="请先选择身份，或手动输入用户名" required="">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="input-group">
+                    <span class="input-group-addon"><i class="fa fa-lock"></i></span>
+                    <input type="password" name="password" id="password" class="form-control" placeholder="密码" required="">
+                </div>
+            </div>
+            @if(kaptcha.getKaptchaOnOff() == true){
+            <div class="form-group">
+                <div class="input-group">
+                    <span class="input-group-addon"><i class="fa fa-check-circle"></i></span>
+                    <input class="form-control" type="text" name="kaptcha" placeholder="验证码" required="" style="border-radius: 8px 0 0 8px;">
+                    <span class="input-group-addon" style="padding:0;overflow:hidden;border-radius:0 8px 8px 0;">
+                        <img src="${ctxPath}/kaptcha" id="kaptcha" style="height:44px;cursor:pointer;" width="100%" height="100%"/>
+                    </span>
+                </div>
+            </div>
+            @}
+            <div class="form-group" style="text-align: left;">
+                <label style="font-weight:normal;cursor:pointer;">
+                    <input type="checkbox" name="remember" style="margin-top:2px;"> 记住我
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary btn-login block full-width">登 录</button>
+            <div style="text-align:center;margin-top:14px;">
+                <a href="${ctxPath}/register" style="color:#667eea;text-decoration:none;font-size:14px;">还没有账号？立即注册</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    var roleAccounts = {
+        admin:   { username: 'admin' },
+        doctor:  { username: 'doctor' },
+        patient: { username: 'patient' }
+    };
+
+    function selectRole(role, el) {
+        // 高亮选中卡片
+        document.querySelectorAll('.role-card').forEach(function(card) {
+            card.classList.remove('active');
+        });
+        el.classList.add('active');
+
+        // 填充账号密码
+        var account = roleAccounts[role];
+        document.getElementById('username').value = account.username;
+        document.getElementById('password').value = '';
+    }
+
+    $(function () {
+        $("#kaptcha").on('click', function () {
+            $("#kaptcha").attr('src', '${ctxPath}/kaptcha?' + Math.floor(Math.random() * 100)).fadeIn();
+        });
+    });
+</script>
+
+</body>
+</html>

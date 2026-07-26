@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fff8e1"/>
+      <stop offset="100%" style="stop-color:#ffecb3"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="20" fill="url(#bg)"/>
+  <path d="M55,85 Q40,65 45,45 Q50,25 60,20 Q70,25 75,45 Q80,65 65,85 Z" fill="#f9a825" opacity="0.9"/>
+  <path d="M55,85 Q50,75 52,60 Q55,45 60,38" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.4"/>
+  <line x1="60" y1="20" x2="60" y2="15" stroke="#8d6e63" stroke-width="3"/>
+  <text x="60" y="108" text-anchor="middle" fill="#e65100" font-size="11" font-weight="bold" font-family="sans-serif">滋补养生</text>
+</svg>

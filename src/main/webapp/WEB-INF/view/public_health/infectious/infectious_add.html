@@ -1,0 +1,25 @@
+@layout("/common/_container.html"){
+<div class="ibox float-e-margins"><div class="ibox-content"><div class="form-horizontal">
+<div class="row"><div class="col-sm-6 b-r">
+<#input id="patientName" name="患者姓名" underline="true"/>
+<#input id="patientIdcard" name="身份证号" underline="true"/>
+<#input id="age" name="年龄" underline="true"/>
+<#select id="gender" name="性别" underline="true"><option value="男">男</option><option value="女">女</option></#select>
+<#input id="diseaseType" name="疾病名称" underline="true"/>
+<#select id="diseaseCategory" name="传染病类别" underline="true"><option value="甲">甲类</option><option value="乙">乙类</option><option value="丙">丙类</option></#select>
+</div><div class="col-sm-6">
+<#input id="onsetDate" name="发病日期" type="date" underline="true"/>
+<#input id="diagnosisDate" name="诊断日期" type="date" underline="true"/>
+<#input id="symptoms" name="主要症状" underline="true"/>
+<#select id="isolationStatus" name="是否隔离" underline="true"><option value="否">否</option><option value="居家隔离">居家隔离</option><option value="住院隔离">住院隔离</option></#select>
+<#input id="closeContactsCount" name="密切接触者数" underline="true"/>
+<#input id="measures" name="处置措施" underline="true"/>
+</div></div>
+<div class="row"><div class="col-sm-12"><#input id="remark" name="备注"/></div></div>
+<div class="row btn-group-m-t"><div class="col-sm-10">
+<#button btnCss="info" name="提交" icon="fa-check" clickFun="Infectious.submitAdd()"/>
+<#button btnCss="danger" name="取消" icon="fa-eraser" clickFun="Infectious.close()"/>
+</div></div>
+</div></div></div>
+<script src="${ctxPath}/static/modular/public_health/infectious.js"></script>
+@}

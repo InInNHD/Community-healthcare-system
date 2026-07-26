@@ -1,0 +1,27 @@
+@layout("/common/_container.html"){
+<div class="ibox float-e-margins">
+    <div class="ibox-content">
+        <div class="form-horizontal">
+            <div class="row">
+                <div class="col-sm-6 b-r">
+                    <#input id="medicineName" name="药物名称" underline="true"/>
+                    <#input id="medicineCategory" name="药品分类" underline="true"/>
+                    <#input id="medicineStock" name="初始库存" underline="true"/>
+                </div>
+                <div class="col-sm-6">
+                    <#input id="medicinePrice" name="药物价格(元)" underline="true"/>
+                    <#input id="medicineValue" name="药物疗效" underline="true"/>
+                    <#input id="medicineStockMin" name="低库存预警阈值" underline="true"/>
+                </div>
+            </div>
+            <div class="row btn-group-m-t">
+                <div class="col-sm-10">
+                    <#button btnCss="info" name="提交" id="ensure" icon="fa-check" clickFun="MedicineInfoInfoDlg.addSubmit()"/>
+                    <#button btnCss="danger" name="取消" id="cancel" icon="fa-eraser" clickFun="MedicineInfoInfoDlg.close()"/>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="${ctxPath}/static/modular/medicinemanager/medicineInfo/medicineInfo_info.js"></script>
+@}

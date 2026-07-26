@@ -1,0 +1,22 @@
+@layout("/common/_container.html"){
+<div class="ibox float-e-margins"><div class="ibox-content"><div class="form-horizontal">
+<input type="hidden" id="id" value="${item.id}">
+<div class="row"><div class="col-sm-6 b-r">
+<#input id="patientName" name="姓名" value="${item.patientName}" underline="true"/>
+<#input id="checkupDate" name="体检日期" type="date" value="${item.checkupDate!}" underline="true"/>
+<#input id="height" name="身高(cm)" value="${item.height!}" underline="true"/>
+<#input id="weight" name="体重(kg)" value="${item.weight!}" underline="true"/>
+<#input id="bloodPressure" name="血压" value="${item.bloodPressure!}" underline="true"/>
+</div><div class="col-sm-6">
+<#input id="bloodSugar" name="空腹血糖" value="${item.bloodSugar!}" underline="true"/>
+<#input id="ecg" name="心电图" value="${item.ecg!}" underline="true"/>
+<#input id="healthAssessment" name="健康评价" value="${item.healthAssessment!}" underline="true"/>
+<#input id="advice" name="健康指导" value="${item.advice!}" underline="true"/>
+</div></div>
+<div class="row btn-group-m-t"><div class="col-sm-10">
+<#button btnCss="info" name="保存" icon="fa-check" clickFun="Elderly.submitEdit()"/>
+<#button btnCss="danger" name="取消" icon="fa-eraser" clickFun="Elderly.close()"/>
+</div></div>
+</div></div></div>
+<script src="${ctxPath}/static/modular/public_health/elderly.js"></script>
+@}
