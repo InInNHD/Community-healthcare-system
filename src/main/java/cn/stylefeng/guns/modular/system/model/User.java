@@ -215,7 +215,6 @@ public class User extends Model<User> {
                 "id=" + id +
                 ", avatar=" + avatar +
                 ", account=" + account +
-                ", password=" + password +
                 ", salt=" + salt +
                 ", name=" + name +
                 ", birthday=" + birthday +

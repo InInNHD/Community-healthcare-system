@@ -25,7 +25,7 @@ public interface JwtConstants {
 
     String AUTH_HEADER = "Authorization";
 
-    String SECRET = "defaultSecret";
+    String SECRET = System.getenv("JWT_SECRET");
 
     Long EXPIRATION = 604800L;
 
