@@ -1,0 +1,137 @@
+# 默认配置面向本地开发：使用内存 H2，不自动执行 Flyway 迁移或初始化演示账号。
+server:
+  # 可通过 SERVER_PORT 避开本机端口冲突；生产环境建议由部署平台显式指定。
+  port: ${SERVER_PORT:8080}
+  # 收到终止信号后等待在途请求完成。
+  shutdown: graceful
+
+spring:
+  application.name: community-healthcare
+  datasource:
+    # MySQL 兼容模式用于快速开发和自动化测试，不可替代生产 MySQL 验证。
+    url: jdbc:h2:mem:healthcare;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  jpa:
+    # 禁止在 Web 层延迟加载，促使应用服务在事务内准备完整响应数据。
+    open-in-view: false
+    hibernate.ddl-auto: update
+  # 默认模式由 Hibernate 创建临时表结构；正式模式改由版本化迁移管理。
+  flyway.enabled: false
+
+app:
+  # 医疗业务日期、排班和统计周期统一采用该时区。
+  business-zone: ${BUSINESS_ZONE:Asia/Shanghai}
+  registry:
+    # 证件检索使用 HMAC pepper；生产环境必须提供独立强随机值。
+    identifier-pepper: ${IDENTIFIER_HASH_PEPPER:demo-r1-identifier-pepper-change-in-production}
+  portal:
+    organization-name: ${PORTAL_ORGANIZATION_NAME:社区卫生服务中心}
+    service-phone: ${PORTAL_SERVICE_PHONE:010-12345678}
+    service-hours: ${PORTAL_SERVICE_HOURS:工作日 08:00-17:00}
+    emergency-phone: ${PORTAL_EMERGENCY_PHONE:120}
+  bootstrap:
+    # 兼容临床演示数据初始化器的总开关，仅 dev/demo 配置启用。
+    enabled: false
+  security:
+    jwt:
+      # JWT 同时校验 issuer、audience、有效期和 kid 对应的轮换密钥。
+      issuer: community-healthcare
+      audience: community-healthcare-web
+      ttl: PT8H
+      active-key:
+        kid: demo-active-2026
+        secret: demo-only-active-jwt-key-2026-change-before-production
+      verification-keys: []
+    password:
+      # bcrypt 成本和密码复杂度策略；已有演示账号密码仅用于试用环境。
+      bcrypt-strength: 12
+      min-length: 12
+      max-length: 128
+      require-uppercase: true
+      require-lowercase: true
+      require-digit: true
+      require-special: true
+    mfa:
+      # 正式环境强制 MFA，密钥采用配置的 AES-GCM 主密钥加密保存。
+      enabled: false
+      challenge-ttl: PT5M
+      encryption-key: ${MFA_ENCRYPTION_KEY:demo-only-mfa-encryption-key-change-before-production}
+    bootstrap:
+      # 默认禁止创建演示账号，避免正式部署意外产生已知凭据。
+      enabled: false
+      must-change-password: true
+    cors:
+      # 本地开发允许动态端口；prod 段必须收紧为实际门户域名。
+      allowed-origins:
+        - http://localhost:*
+        - http://127.0.0.1:*
+
+management:
+  # 仅暴露运行健康与基础指标，不开放敏感环境和配置端点。
+  endpoints.web.exposure.include: health,info,metrics
+  endpoint.health.probes.enabled: true
+
+---
+# 开发/演示共享配置：初始化可预填的演示账号，并保留首次登录改密能力。
+spring:
+  config.activate.on-profile: "dev | demo"
+app:
+  bootstrap:
+    enabled: true
+  security:
+    bootstrap:
+      enabled: true
+      must-change-password: true
+      admin-password: ${ADMIN_PASSWORD:Admin@123456}
+      doctor-password: ${DOCTOR_PASSWORD:Doctor@123456}
+      nurse-password: ${NURSE_PASSWORD:Nurse@123456}
+      resident-password: ${RESIDENT_PASSWORD:Resident@123456}
+
+---
+# demo 模式额外建立完整演示表结构和数据，账号无需首次改密，便于公开试用。
+spring:
+  config.activate.on-profile: demo
+app:
+  demo-schema-migration:
+    enabled: true
+  security:
+    bootstrap:
+      must-change-password: false
+
+---
+# 正式模式：外部数据库、Flyway 校验、短时 JWT、MFA 和严格 CORS 均由环境显式配置。
+spring:
+  config.activate.on-profile: prod
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa.hibernate.ddl-auto: validate
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+app:
+  portal:
+    organization-name: ${PORTAL_ORGANIZATION_NAME}
+    service-phone: ${PORTAL_SERVICE_PHONE}
+    service-hours: ${PORTAL_SERVICE_HOURS}
+    emergency-phone: ${PORTAL_EMERGENCY_PHONE}
+  bootstrap:
+    enabled: false
+  security:
+    jwt:
+      issuer: ${JWT_ISSUER:community-healthcare}
+      audience: ${JWT_AUDIENCE:community-healthcare-web}
+      ttl: ${JWT_TTL:PT30M}
+      active-key:
+        kid: ${JWT_ACTIVE_KID:}
+        secret: ${JWT_ACTIVE_SECRET:}
+    mfa:
+      enabled: true
+      encryption-key: ${MFA_ENCRYPTION_KEY:}
+      bootstrap-admin-secret: ${MFA_BOOTSTRAP_ADMIN_SECRET:}
+    bootstrap:
+      enabled: false
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:}

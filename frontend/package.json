@@ -1,0 +1,39 @@
+{
+  "name": "community-healthcare-web",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:demo": "vite --mode demo",
+    "build": "vue-tsc -b && vite build",
+    "build:demo": "vue-tsc -b && vite build --mode demo",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc -b",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:e2e": "playwright test",
+    "test:a11y": "playwright test --grep @a11y",
+    "api:generate:demo": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/generate-api-client.ps1"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "axios": "^1.11.0",
+    "element-plus": "^2.11.0",
+    "vue": "^3.5.21",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.62.1",
+    "@types/node": "^24.3.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/test-utils": "^2.4.11",
+    "jsdom": "^30.0.1",
+    "openapi-typescript-codegen": "^0.31.0",
+    "typescript": "~5.9.2",
+    "vite": "^8.0.0",
+    "vitest": "^4.1.11",
+    "vue-tsc": "^3.0.6"
+  }
+}

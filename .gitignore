@@ -1,6 +1,15 @@
 # Maven
 target/
 *.class
+work/
+
+# Node / Vue
+node_modules/
+dist/
+.npm-cache/
+*.tsbuildinfo
+test-results/
+playwright-report/
 
 # IDE
 .idea/
