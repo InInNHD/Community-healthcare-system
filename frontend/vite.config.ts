@@ -26,32 +26,6 @@ export default defineConfig({
         staff: fileURLToPath(new URL('./staff.html', import.meta.url)),
         resident: fileURLToPath(new URL('./resident.html', import.meta.url)),
       },
-      output: {
-        codeSplitting: {
-          minSize: 20_000,
-          maxSize: 420_000,
-          groups: [
-            {
-              name: 'element-plus',
-              test: /node_modules[\\/]element-plus/,
-              priority: 20,
-              includeDependenciesRecursively: false,
-            },
-            {
-              name: 'vue-vendor',
-              test: /node_modules[\\/](?:vue|vue-router|@vue)[\\/]/,
-              priority: 10,
-              includeDependenciesRecursively: false,
-            },
-            {
-              name: 'vendor',
-              test: /node_modules/,
-              priority: 1,
-              includeDependenciesRecursively: false,
-            },
-          ],
-        },
-      },
     },
   },
 })
