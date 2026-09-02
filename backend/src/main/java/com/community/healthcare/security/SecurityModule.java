@@ -184,6 +184,8 @@ public class SecurityModule {
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(csrfRepository)
                         .csrfTokenRequestHandler(csrfHandler)
+                        // Cookie 中的 Bearer Token 会在每次请求重新认证，不能因此清除双提交 CSRF Cookie。
+                        .sessionAuthenticationStrategy((authentication, request, response) -> { })
                         .requireCsrfProtectionMatcher(request -> isStateChanging(request.getMethod())
                                 && !AuthenticationBootstrapEndpoint.matches(request)
                                 && hasAccessCookie(request.getCookies())))

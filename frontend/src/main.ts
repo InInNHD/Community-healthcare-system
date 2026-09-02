@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import {
+  ElAlert,
   ElButton,
   ElConfigProvider,
   ElDatePicker,
@@ -14,6 +15,7 @@ import {
   ElIcon,
   ElInput,
   ElInputNumber,
+  ElLoading,
   ElOption,
   ElPagination,
   ElProgress,
@@ -32,6 +34,7 @@ import router from './router'
 const app = createApp(App)
 
 const elementComponents = [
+  ElAlert,
   ElButton,
   ElConfigProvider,
   ElDatePicker,
@@ -58,4 +61,5 @@ const elementComponents = [
 ]
 
 elementComponents.forEach(component => app.use(component))
+app.use(ElLoading)
 app.use(router).mount('#app')

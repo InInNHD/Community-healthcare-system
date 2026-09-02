@@ -85,8 +85,12 @@ class DemoProfileSecurityIntegrationTests {
         MvcResult csrf = mvc.perform(get("/api/auth/csrf").cookie(accessCookie))
                 .andExpect(status().isOk()).andReturn();
         String csrfToken = JsonPath.read(csrf.getResponse().getContentAsString(), "$.token");
+        Cookie csrfCookie = new Cookie("XSRF-TOKEN", csrfToken);
+        mvc.perform(get("/api/resident/profile").cookie(accessCookie, csrfCookie))
+                .andExpect(status().isOk())
+                .andExpect(header().doesNotExist("Set-Cookie"));
         mvc.perform(post("/api/resident/health-records")
-                        .cookie(accessCookie, new Cookie("XSRF-TOKEN", csrfToken))
+                        .cookie(accessCookie, csrfCookie)
                         .header("X-XSRF-TOKEN", csrfToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"heartRate\":72}"))

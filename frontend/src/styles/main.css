@@ -19,4 +19,5 @@ nav { display: grid; gap: 5px; margin-top: 26px; }.nav-item { height: 46px; padd
 .page-heading { display:flex;justify-content:space-between;align-items:end;margin-bottom:20px }.page-heading h2 { margin:0 0 6px;font-size:24px }.page-heading p { margin:0;color:#7b918f;font-size:14px }
 .toolbar { padding:18px 20px;display:flex;justify-content:space-between;gap:16px;border-bottom:1px solid #edf2f1 }.table-wrap { padding: 4px 20px 18px; }.pagination { display:flex;justify-content:flex-end;padding-top:18px }
 .el-button--primary { --el-button-bg-color:#0b746e;--el-button-border-color:#0b746e;--el-button-hover-bg-color:#12877f;--el-button-hover-border-color:#12877f; }.el-table { --el-table-header-bg-color:#f7faf9;--el-table-border-color:#edf2f1; }
+.el-message--error .el-message__content { color: #9f2630; }
 @media (max-width: 900px) { body { min-width: 0; } }
