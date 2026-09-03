@@ -20,7 +20,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -37,6 +37,7 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppC
         "spring.datasource.url=jdbc:h2:mem:r1-core;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=0")
 @ActiveProfiles("demo")
 class R1CoreIntegrationTests {
+    private static final AtomicInteger FIXTURE_SEQUENCE = new AtomicInteger();
     @Autowired WebApplicationContext context;
     @Autowired ObjectMapper objectMapper;
     @Autowired JdbcTemplate jdbc;
@@ -204,6 +205,7 @@ class R1CoreIntegrationTests {
     }
 
     private String suffix() {
-        return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        // 患者证件会按 NATIONAL_ID 规范化并脱敏，使用纯数字且末四位递增避免快照碰撞。
+        return String.format("%012d", FIXTURE_SEQUENCE.incrementAndGet());
     }
 }
