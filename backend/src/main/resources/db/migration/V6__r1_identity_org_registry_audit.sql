@@ -11,8 +11,7 @@ CREATE TABLE organization (
     version BIGINT NOT NULL DEFAULT 0,
     PRIMARY KEY (id),
     UNIQUE KEY uk_organization_code (code),
-    CONSTRAINT fk_organization_parent FOREIGN KEY (parent_organization_id) REFERENCES organization(id),
-    CONSTRAINT chk_organization_not_self_parent CHECK (parent_organization_id IS NULL OR parent_organization_id <> id)
+    CONSTRAINT fk_organization_parent FOREIGN KEY (parent_organization_id) REFERENCES organization(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE site (
