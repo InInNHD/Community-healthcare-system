@@ -11,6 +11,7 @@ CREATE TABLE organization (
     version BIGINT NOT NULL DEFAULT 0,
     PRIMARY KEY (id),
     UNIQUE KEY uk_organization_code (code),
+    -- MySQL 不允许 CHECK 表达式引用 AUTO_INCREMENT 列；自引用父子校验由 OrganizationHierarchyPolicy 执行。
     CONSTRAINT fk_organization_parent FOREIGN KEY (parent_organization_id) REFERENCES organization(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
