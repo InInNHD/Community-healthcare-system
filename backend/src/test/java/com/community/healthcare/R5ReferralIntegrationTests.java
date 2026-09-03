@@ -65,7 +65,11 @@ class R5ReferralIntegrationTests {
         assertThat(jdbc.queryForObject("select count(*) from audit_event where action='REFERRAL_SUBMITTED' and resource_id=?",
                 Integer.class, String.valueOf(referralId))).isEqualTo(1);
 
-        admin(post("/api/v1/admin/integrations/outbox/{id}/retry", outboxId(referralId)), Map.of())
+        long pendingOutboxId = outboxId(referralId);
+        assertThat(referrals.dueOutboxIds(20)).contains(pendingOutboxId);
+        assertThat(referrals.dispatchDueOutbox(pendingOutboxId)).isTrue();
+        assertThat(referrals.dispatchDueOutbox(pendingOutboxId)).isFalse();
+        admin(post("/api/v1/admin/integrations/outbox/{id}/retry", pendingOutboxId), Map.of())
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SENT"))
                 .andExpect(jsonPath("$.simulation").value(true));
         for (String next : List.of("ACCEPTED", "SCHEDULED", "ATTENDED")) {

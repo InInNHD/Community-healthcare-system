@@ -19,4 +19,9 @@ public record AuditEventCommand(String actor, String actorRole, String action,
                                 String resourceType, String resourceId,
                                 String outcome, String purpose, String detailsJson,
                                 String correlationId) {
+    public AuditEventCommand {
+        if (correlationId == null || correlationId.isBlank()) {
+            correlationId = com.community.healthcare.observability.RequestCorrelationFilter.current();
+        }
+    }
 }

@@ -15,6 +15,7 @@ import java.util.Map;
 @PreAuthorize("hasAnyRole('DOCTOR','NURSE')")
 class PublicHealthStaffController{
  private final PublicHealthApplicationService s;PublicHealthStaffController(PublicHealthApplicationService s){this.s=s;}
+ @GetMapping("/visits") List<Map<String,Object>> visits(@AuthenticationPrincipal Jwt j){return s.staffVisits(staff(j));}
  @PostMapping("/registries") @ResponseStatus(HttpStatus.CREATED) Map<String,Object> registry(@AuthenticationPrincipal Jwt j,@RequestHeader("Idempotency-Key")String k,@RequestBody Registry r){return s.register(staff(j),k,r.patientId(),r.teamId(),r.populationType());}
  @PostMapping("/registries/{id}/plans") @ResponseStatus(HttpStatus.CREATED) Map<String,Object> plan(@AuthenticationPrincipal Jwt j,@PathVariable long id,@RequestBody Plan r){return s.createPlan(staff(j),id,r.code(),r.cadenceDays(),r.nextDueOn());}
  @PostMapping("/visits") @ResponseStatus(HttpStatus.CREATED) Map<String,Object> visit(@AuthenticationPrincipal Jwt j,@RequestHeader("Idempotency-Key")String k,@RequestBody Visit r){return s.createVisit(staff(j),k,r.planId(),r.findingsJson());}

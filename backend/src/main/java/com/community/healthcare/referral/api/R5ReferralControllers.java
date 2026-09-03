@@ -22,6 +22,7 @@ import java.util.List;
 class StaffReferralController {
     private final R5PlatformService service;
     StaffReferralController(R5PlatformService service){this.service=service;}
+    @GetMapping List<R5PlatformService.ReferralView> list(@AuthenticationPrincipal Jwt jwt){return service.staffReferrals(staff(jwt));}
     @PostMapping @ResponseStatus(HttpStatus.CREATED)
     R5PlatformService.ReferralView create(@AuthenticationPrincipal Jwt jwt,@RequestHeader("Idempotency-Key")String key,@Valid @RequestBody CreateRequest r){return service.create(staff(jwt),key,new R5PlatformService.CreateReferral(r.patientId(),r.encounterId(),r.targetOrganization(),r.targetDepartment(),r.reason()));}
     @PostMapping("/{id}/submit") R5PlatformService.ReferralView submit(@AuthenticationPrincipal Jwt jwt,@PathVariable long id,@RequestHeader("Idempotency-Key")String key){return service.submit(staff(jwt),id,key);}

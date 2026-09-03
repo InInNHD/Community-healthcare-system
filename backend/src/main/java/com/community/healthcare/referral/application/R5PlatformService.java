@@ -2,6 +2,7 @@ package com.community.healthcare.referral.application;
 
 import com.community.healthcare.integration.ExchangeReceipt;
 import com.community.healthcare.integration.RegionalHealthPlatformPort;
+import com.community.healthcare.observability.RequestCorrelationFilter;
 import com.community.healthcare.referral.domain.ReferralCase;
 import com.community.healthcare.referral.domain.ReferralStatus;
 import com.community.healthcare.residentregistry.application.StaffPatientScope;
@@ -19,6 +20,7 @@ import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -122,6 +124,8 @@ public class R5PlatformService {
         ReferralView view = get(id); requireStaff(view, staffId); return view;
     }
     public List<ReferralView> residentReferrals(long patientId) { return jdbc.query("select * from referral_case where patient_id=? order by id desc", this::referral, patientId); }
+    /** 返回当前医生创建的转诊单。 */
+    public List<ReferralView> staffReferrals(long staffId) { return jdbc.query("select * from referral_case where created_by_staff_id=? order by id desc", this::referral, staffId); }
 
     /**
      * 重试出站事件并保存每次交换结果；失败状态和次数同样提交，供退避重试和人工对账。
@@ -131,22 +135,49 @@ public class R5PlatformService {
         Map<String,Object> row;
         try { row = jdbc.queryForMap("select * from outbox_event where id=?", id); }
         catch (EmptyResultDataAccessException ex) { throw new jakarta.persistence.EntityNotFoundException("交换事件不存在"); }
+        if ("SENT".equals(row.get("status"))) {
+            return new WorkbenchView(id,"SENT",((Number)row.get("attempts")).intValue(),null,true);
+        }
         String key=(String)row.get("event_key"), payload=(String)row.get("payload_json"); int attempts=((Number)row.get("attempts")).intValue()+1;
         try {
             ExchangeReceipt receipt=platform.submit(key,payload);
             long exchangeId=insertExchange(id,payload,write(receipt),"SENT",receipt.externalReference());
-            jdbc.update("update outbox_event set status='SENT',attempts=?,processed_at=current_timestamp,last_error=null where id=?",attempts,id);
+            jdbc.update("update outbox_event set status='SENT',attempts=?,processed_at=current_timestamp,last_error=null,next_attempt_at=null where id=?",attempts,id);
             if ("REFERRAL".equals(row.get("aggregate_type"))) jdbc.update("insert into referral_exchange_link(referral_id,integration_exchange_id,created_at) values(?,?,current_timestamp)",Long.parseLong((String)row.get("aggregate_id")),exchangeId);
             audit(actor,"ADMIN","INTEGRATION_RETRIED","OUTBOX_EVENT",id,"SUCCESS","模拟适配器");
             return new WorkbenchView(id,"SENT",attempts,receipt.externalReference(),receipt.simulation());
         } catch (RuntimeException ex) {
             insertExchange(id,payload,null,"FAILED",null);
             String status=attempts>=3?"DEAD":"FAILED";
-            jdbc.update("update outbox_event set status=?,attempts=?,last_error=?,next_attempt_at=current_timestamp where id=?",status,attempts,trim(ex.getMessage(),1000),id);
-            if (attempts>=3) jdbc.update("insert into integration_dead_letter(outbox_event_id,payload_json,failure_reason,attempts,failed_at) values(?,?,?,?,current_timestamp)",id,payload,trim(ex.getMessage(),1000),attempts);
+            LocalDateTime nextAttempt = LocalDateTime.now().plusSeconds(Math.min(900, 30L << Math.min(attempts - 1, 5)));
+            jdbc.update("update outbox_event set status=?,attempts=?,last_error=?,next_attempt_at=? where id=?",status,attempts,trim(ex.getMessage(),1000),nextAttempt,id);
+            if (attempts>=3) {
+                int existing = jdbc.queryForObject("select count(*) from integration_dead_letter where outbox_event_id=?",Integer.class,id);
+                if (existing == 0) jdbc.update("insert into integration_dead_letter(outbox_event_id,payload_json,failure_reason,attempts,failed_at) values(?,?,?,?,current_timestamp)",id,payload,trim(ex.getMessage(),1000),attempts);
+                else jdbc.update("update integration_dead_letter set failure_reason=?,attempts=?,failed_at=current_timestamp,resolved_at=null,resolved_by=null where outbox_event_id=?",trim(ex.getMessage(),1000),attempts,id);
+            }
             audit(actor,"ADMIN","INTEGRATION_RETRIED","OUTBOX_EVENT",id,"FAILED",ex.getMessage());
             return new WorkbenchView(id,status,attempts,null,true);
         }
+    }
+
+    /** 查询到期的待交换事件；包含超时的处理中事件，以便进程异常退出后自动恢复。 */
+    public List<Long> dueOutboxIds(int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 100));
+        return jdbc.queryForList("select id from outbox_event where status in ('PENDING','FAILED','PROCESSING') " +
+                "and (next_attempt_at is null or next_attempt_at<=current_timestamp) order by created_at limit ?",Long.class,safeLimit);
+    }
+
+    /** 原子认领并发送一个到期事件；其他实例认领成功时本实例直接跳过。 */
+    @Transactional
+    public boolean dispatchDueOutbox(long id) {
+        LocalDateTime leaseUntil = LocalDateTime.now().plusMinutes(5);
+        int claimed = jdbc.update("update outbox_event set status='PROCESSING',next_attempt_at=? where id=? " +
+                "and status in ('PENDING','FAILED','PROCESSING') and (next_attempt_at is null or next_attempt_at<=current_timestamp)",
+                leaseUntil,id);
+        if (claimed == 0) return false;
+        retryOutbox(id,"system:outbox-dispatcher");
+        return true;
     }
 
     /** 查询区域平台交换工作台数据。 */
@@ -188,6 +219,37 @@ public class R5PlatformService {
                 }, patientId);
     }
 
+    /** 返回当前工作人员服务范围内的居民留言。 */
+    public List<Map<String,Object>> staffMessages(long staffId) {
+        return jdbc.queryForList("select m.id,m.patient_id,p.name as patient_name,m.direction,m.category,m.subject,m.body,m.status,m.created_at "
+                + "from notification_message m join patient p on p.id=m.patient_id where exists(select 1 from patient_site_enrollment pe "
+                + "join staff_site_assignment sa on sa.site_id=pe.site_id where pe.patient_id=m.patient_id and pe.active=true "
+                + "and sa.staff_profile_id=? and sa.active=true and sa.valid_from<=current_timestamp "
+                + "and (sa.valid_to is null or sa.valid_to>current_timestamp)) order by m.id desc limit 100", staffId);
+    }
+
+    /** 对服务范围内的居民留言进行非诊断性答复。 */
+    @Transactional
+    public Map<String,Object> replyMessage(long staffId,long messageId,String body) {
+        Map<String,Object> original;
+        try { original=jdbc.queryForMap("select patient_id,subject from notification_message where id=?",messageId); }
+        catch (EmptyResultDataAccessException ex) { throw new jakarta.persistence.EntityNotFoundException("留言不存在"); }
+        long patientId=((Number)original.get("patient_id")).longValue();
+        scope.require(staffId,patientId);
+        KeyHolder holder=insert("insert into notification_message(patient_id,direction,category,subject,body,diagnostic,status,created_at) values(?,'OUTBOUND','HEALTH_REPLY',?,?,false,'CREATED',current_timestamp)",patientId,String.valueOf(original.get("subject")),required(body,"答复内容"));
+        long id=holder.getKey().longValue();
+        jdbc.update("insert into notification_delivery(message_id,channel,status,attempts) values(?,'PORTAL','DELIVERED',1)",id);
+        jdbc.update("update notification_message set status='REPLIED' where id=?",messageId);
+        audit("staff:"+staffId,"STAFF","MESSAGE_REPLIED","MESSAGE",id,"SUCCESS","非诊断性答复");
+        return jdbc.queryForMap("select id,patient_id,direction,category,subject,body,status,created_at from notification_message where id=?",id);
+    }
+
+    /** 查询居民本人的档案开放申请。 */
+    public List<Map<String,Object>> releases(long patientId){return jdbc.queryForList("select id,referral_id,scope_code,purpose,status,requested_at,expires_at,released_at,revoked_at from record_release where patient_id=? order by id desc",patientId);}
+
+    /** 查询居民本人已提交的服务评价。 */
+    public List<Map<String,Object>> feedback(long patientId){return jdbc.queryForList("select id,business_type,business_id,rating,comments,created_at from service_feedback where patient_id=? order by id desc",patientId);}
+
     /** 保存居民对指定业务服务的通用反馈。 */
     @Transactional
     public Map<String,Object> serviceFeedback(long patientId,String type,String businessId,int rating,String comments) {
@@ -218,7 +280,7 @@ public class R5PlatformService {
         if(affected!=1)throw new OptimisticLockingFailureException("转诊状态已被其他操作修改，请刷新后重试");
     }
     private void history(long id,ReferralStatus from,ReferralStatus to,String actorType,long actor,String note){jdbc.update("insert into referral_history(referral_id,from_status,to_status,actor_type,actor_id,note,occurred_at) values(?,?,?,?,?,?,current_timestamp)",id,from==null?null:from.name(),to.name(),actorType,actor,trim(note,1000));}
-    private void audit(String actor,String role,String action,String type,Object id,String outcome,String details){jdbc.update("insert into audit_event(occurred_at,actor,actor_role,action,resource_type,resource_id,outcome,purpose,details_json) values(current_timestamp,?,?,?,?,?,?,?,?)",actor,role,action,type,String.valueOf(id),outcome,"业务办理",trim(details,2000));}
+    private void audit(String actor,String role,String action,String type,Object id,String outcome,String details){jdbc.update("insert into audit_event(occurred_at,actor,actor_role,action,resource_type,resource_id,outcome,purpose,details_json,correlation_id) values(current_timestamp,?,?,?,?,?,?,?,?,?)",actor,role,action,type,String.valueOf(id),outcome,"业务办理",trim(details,2000), RequestCorrelationFilter.current());}
     private long insertExchange(long outbox,String request,String response,String status,String ref){KeyHolder h=insert("insert into integration_exchange(outbox_event_id,adapter_code,request_json,response_json,status,external_reference,attempted_at) values(?,'REGIONAL_MOCK',?,?,?,?,current_timestamp)",outbox,request,response,status,ref);return h.getKey().longValue();}
     private KeyHolder insert(String sql,Object...args){KeyHolder h=new GeneratedKeyHolder();jdbc.update(c->{PreparedStatement ps=c.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);for(int i=0;i<args.length;i++)ps.setObject(i+1,args[i]);return ps;},h);return h;}
     private void upsertMetric(String p,String c,BigDecimal v){int n=jdbc.update("update quality_snapshot set metric_value=?,generated_at=current_timestamp where period_key=? and metric_code=?",v,p,c);if(n==0)jdbc.update("insert into quality_snapshot(period_key,metric_code,metric_value,generated_at) values(?,?,?,current_timestamp)",p,c,v);}

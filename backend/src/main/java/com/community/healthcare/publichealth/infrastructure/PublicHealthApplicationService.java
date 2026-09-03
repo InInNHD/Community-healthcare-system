@@ -1,5 +1,7 @@
 package com.community.healthcare.publichealth.infrastructure;
 
+import com.community.healthcare.observability.RequestCorrelationFilter;
+
 import com.community.healthcare.publichealth.domain.FollowUpVisitStatus;
 import com.community.healthcare.publichealth.domain.HealthAlertStatus;
 import com.community.healthcare.publichealth.domain.PriorityPopulationType;
@@ -67,6 +69,8 @@ public class PublicHealthApplicationService {
  @Transactional public Map<String,Object> dismiss(long staff,long id,String key,String note){return alertTransition(staff,id,key,"DISMISS",HealthAlertStatus::dismiss,text(note));}
  /** 查询居民本人可见的随访记录。 */
  public List<Map<String,Object>> residentVisits(long patient){return jdbc.queryForList("select id,registry_id,status,findings_json,submitted_at,verified_at,return_reason from ph_follow_up_visit where patient_id=? order by id desc",patient);}
+ /** 返回当前工作人员范围内的随访记录。 */
+ public List<Map<String,Object>> staffVisits(long staff){return jdbc.queryForList("select v.id,v.patient_id,p.name as patient_name,v.status,v.findings_json,v.submitted_at,v.verified_at,v.return_reason from ph_follow_up_visit v join patient p on p.id=v.patient_id where v.performed_by_staff_id=? or exists(select 1 from patient_site_enrollment pe join staff_site_assignment sa on sa.site_id=pe.site_id where pe.patient_id=v.patient_id and pe.active=true and sa.staff_profile_id=? and sa.active=true and sa.valid_from<=current_timestamp and (sa.valid_to is null or sa.valid_to>current_timestamp)) order by v.id desc limit 100",staff,staff);}
 
  /** 幂等推进随访状态；审核通过后滚动计算下一次应随访日期。 */
  private Map<String,Object> visitTransition(long staff,long id,String key,String op,java.util.function.Function<FollowUpVisitStatus,FollowUpVisitStatus> fn,String reason){
@@ -81,7 +85,7 @@ public class PublicHealthApplicationService {
   jdbc.update("update ph_health_alert set status=?,acknowledged_by_staff_id=case when ? then ? else acknowledged_by_staff_id end,acknowledged_at=case when ? then current_timestamp else acknowledged_at end,closed_by_staff_id=case when ? then ? else closed_by_staff_id end,closed_at=case when ? then current_timestamp else closed_at end,closure_note=?,updated_at=current_timestamp,version=version+1 where id=?",to.name(),ack,staff,ack,!ack,staff,!ack,note,id);
   if(!ack)audit(String.valueOf(staff),"STAFF","PUBLIC_HEALTH_ALERT_CLOSED","HEALTH_ALERT",id);remember("PH_ALERT_"+op,String.valueOf(staff),key,id);return alert(id);
  }
- private void audit(String actor,String role,String action,String type,long id){jdbc.update("insert into audit_event(occurred_at,actor,actor_role,action,resource_type,resource_id,outcome,purpose,details_json,correlation_id) values(current_timestamp,?,?,?,?,?,'SUCCESS','public-health','{\"diagnostic\":false}',null)",actor,role,action,type,String.valueOf(id));}
+ private void audit(String actor,String role,String action,String type,long id){jdbc.update("insert into audit_event(occurred_at,actor,actor_role,action,resource_type,resource_id,outcome,purpose,details_json,correlation_id) values(current_timestamp,?,?,?,?,?,'SUCCESS','public-health','{\"diagnostic\":false}',?)",actor,role,action,type,String.valueOf(id), RequestCorrelationFilter.current());}
  private boolean replayed(String scope,String actor,String key){return jdbc.queryForObject("select count(*) from idempotency_record where operation_scope=? and actor_id=? and idempotency_key=?",Integer.class,scope,actor,key)>0;}
  private void remember(String scope,String actor,String key,long id){jdbc.update("insert into idempotency_record(operation_scope,actor_id,idempotency_key,request_hash,resource_id,response_json,created_at,expires_at) values(?,?,?,'r4',?,'{}',?,?)",scope,actor,key,String.valueOf(id),LocalDateTime.now(),LocalDateTime.now().plusDays(1));}
  private Map<String,Object> registry(long id){return row("select * from ph_registry where id=?",id);}private Map<String,Object> visit(long id){return row("select * from ph_follow_up_visit where id=?",id);}private Map<String,Object>alert(long id){return row("select * from ph_health_alert where id=?",id);}

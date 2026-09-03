@@ -217,6 +217,44 @@ public class R3PharmacyBillingService {
                 .stream().map(r -> invoice(number(r, "id"))).toList();
     }
 
+    /** 返回医生本人开立的处方。 */
+    @Transactional(readOnly = true)
+    public List<PrescriptionView> doctorPrescriptions(long staffId) {
+        return prescriptionIds("select id from rx_prescription where prescribed_by_staff_id=? order by updated_at desc limit 100", staffId);
+    }
+
+    /** 返回药师当前任职站点可办理的处方。 */
+    @Transactional(readOnly = true)
+    public List<PrescriptionView> pharmacyPrescriptions(long staffId) {
+        return prescriptionIds("select distinct p.id from rx_prescription p join clinical_encounter e on e.id=p.encounter_id "
+                + "join sched_appointment a on a.id=e.appointment_id join sched_slot sl on sl.id=a.slot_id "
+                + "join sched_session ss on ss.id=sl.session_id join staff_site_assignment sa on sa.site_id=ss.site_id "
+                + "where sa.staff_profile_id=? and sa.active=true and sa.valid_from<=current_timestamp "
+                + "and (sa.valid_to is null or sa.valid_to>current_timestamp) order by p.id desc limit 100", staffId);
+    }
+
+    /** 返回收费员当前站点居民的账单。 */
+    @Transactional(readOnly = true)
+    public List<InvoiceView> staffInvoices(long staffId) {
+        return jdbc.queryForList("select distinct i.id from billing_invoice i join patient_site_enrollment pe on pe.patient_id=i.patient_id "
+                        + "join staff_site_assignment sa on sa.site_id=pe.site_id where sa.staff_profile_id=? and pe.active=true "
+                        + "and sa.active=true and sa.valid_from<=current_timestamp and (sa.valid_to is null or sa.valid_to>current_timestamp) "
+                        + "order by i.id desc limit 100", staffId)
+                .stream().map(row -> invoice(number(row, "id"))).toList();
+    }
+
+    /** 返回可开立处方的药品目录和可用库存。 */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> medicineSkus() {
+        return jdbc.queryForList("select s.id,s.code,s.name,s.specification,coalesce(sum(b.quantity_on_hand),0) as availableQuantity "
+                + "from rx_medicine_sku s left join inventory_batch b on b.sku_id=s.id and b.expires_on>current_date "
+                + "where s.active=true group by s.id,s.code,s.name,s.specification order by s.name limit 100");
+    }
+
+    private List<PrescriptionView> prescriptionIds(String sql, long staffId) {
+        return jdbc.queryForList(sql, staffId).stream().map(row -> prescription(number(row, "id"))).toList();
+    }
+
     /** 返回显式标记为模拟结果的医保资格检查。 */
     public EligibilityView eligibility(long patientId) {
         if (count("select count(*) from patient where id=? and active=true", patientId) == 0) throw new EntityNotFoundException("居民不存在");
@@ -305,7 +343,7 @@ public class R3PharmacyBillingService {
         catch(java.security.NoSuchAlgorithmException ex){throw new IllegalStateException(ex);}
     }
     private static String normalize(String value){return value==null?"":value.trim();}
-    private void appendAudit(String actor,String role,String action,String resource,long id,String details){audit.append(new AuditEventCommand(actor,role,action,resource,String.valueOf(id),"SUCCESS","业务操作",details,UUID.randomUUID().toString()));}
+    private void appendAudit(String actor,String role,String action,String resource,long id,String details){audit.append(new AuditEventCommand(actor,role,action,resource,String.valueOf(id),"SUCCESS","业务操作",details,null));}
 
     /** 创建处方命令。 */
     public record PrescriptionCommand(long encounterId,String diagnosis,List<PrescriptionItemCommand> items){}

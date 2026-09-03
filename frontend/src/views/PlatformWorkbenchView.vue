@@ -41,21 +41,27 @@ function asRecord(item: unknown): Record<string, unknown> {
 
 function itemTitle(item: unknown, index: number) {
   const row = asRecord(item)
-  return String(row.title ?? row.name ?? row.departmentName ?? row.subject ?? row.metricCode ?? row.ticketNo ?? `业务记录 ${index + 1}`)
+  return String(row.title ?? row.name ?? row.patientName ?? row.residentName ?? row.staffName ?? row.departmentName ?? row.subject ?? row.metricCode ?? row.ticketNo ?? `业务记录 ${index + 1}`)
 }
 
 function itemDetail(item: unknown) {
   const row = asRecord(item)
-  return String(row.startsAt ?? row.dueAt ?? row.targetOrganization ?? row.body ?? row.lastError ?? row.metricValue ?? row.description ?? '详细信息以业务单据为准')
+  return String(row.startsAt ?? row.scheduledAt ?? row.dueAt ?? row.targetOrganization ?? row.body ?? row.lastError ?? row.metricValue ?? row.description ?? '详细信息以业务单据为准')
 }
 
 function itemStatus(item: unknown) {
   return businessStatusLabel(String(asRecord(item).status ?? ''))
 }
 
+function itemBusinessId(item: unknown) {
+  const row = asRecord(item)
+  const id = selectedKey.value === 'encounter' ? row.appointmentId : row.id
+  const parsed = typeof id === 'number' ? id : Number(id)
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined
+}
+
 function firstItemId() {
-  const id = asRecord(items.value[0]).id
-  return typeof id === 'number' ? id : Number(id)
+  return itemBusinessId(items.value[0])
 }
 
 async function loadSelected() {
@@ -69,13 +75,30 @@ async function loadSelected() {
       case 'contract': response = await platformApi.listResidentContracts(); break
       case 'health-programs': response = await platformApi.listResidentVisits(); break
       case 'referral': response = await platformApi.listResidentReferrals(); break
+      case 'record-access': response = await platformApi.listRecordReleases(); break
       case 'consultation': response = await platformApi.listConsultations(); break
+      case 'feedback': response = await platformApi.listResidentAppointments(); break
+      case 'checkin-queue': response = await platformApi.listStaffAppointments(); break
+      case 'encounter': response = await platformApi.listStaffQueue(); break
+      case 'prescription': response = await platformApi.listStaffEncounters(); break
+      case 'prescription-review':
+      case 'dispensing': response = await platformApi.listPrescriptions(); break
+      case 'billing-counter': response = await platformApi.listStaffInvoices(); break
+      case 'family-doctor-tasks': response = await platformApi.listStaffTasks(); break
+      case 'public-health-followup': response = await platformApi.listStaffVisits(); break
+      case 'referral-management': response = await platformApi.listStaffReferrals(); break
+      case 'consultation-replies': response = await platformApi.listStaffMessages(); break
       case 'organization': response = await platformApi.listOrganizations(); break
+      case 'service-packages': response = await platformApi.listServicePackages(); break
       case 'integration': response = await platformApi.listIntegrations(); break
       case 'quality': response = await platformApi.listQualityMetrics(); break
       default: response = { data: [] }
     }
-    items.value = Array.isArray(response.data) ? response.data : []
+    const loaded = Array.isArray(response.data) ? response.data : []
+    items.value = selectedKey.value === 'feedback'
+      ? loaded.filter(item => String(asRecord(item).status) === 'COMPLETED')
+      : loaded
+    businessId.value = needsBusinessId(selectedKey.value) ? firstItemId() : undefined
     state.value = items.value.length ? 'success' : 'empty'
   } catch (error) {
     items.value = []
@@ -157,7 +180,28 @@ async function submitPrimaryAction() {
     }
     case 'dispensing':
       if (!businessId.value) return ElMessage.warning('请填写处方编号')
-      return runOperation(() => platformApi.dispensePrescription(businessId.value!, { batchAllocations: [] }), '发药完成')
+      {
+        const selected = asRecord(items.value.find(item => Number(asRecord(item).id) === businessId.value))
+        const status = String(selected.status ?? '')
+        if (status === 'APPROVED') return runOperation(() => platformApi.pickPrescription(businessId.value!), '已进入配药')
+        if (status === 'PICKING') return runOperation(() => platformApi.checkPrescription(businessId.value!), '配药核对完成')
+        return runOperation(() => platformApi.dispensePrescription(businessId.value!, { batchAllocations: [] }), '发药完成')
+      }
+    case 'billing-counter':
+      if (!id) return ElMessage.warning('暂无可办理账单')
+      return runOperation(() => platformApi.issueInvoice(id), '账单已出账')
+    case 'family-doctor-tasks':
+      if (!id || !text.value.trim()) return ElMessage.warning('请选择任务并填写履约摘要')
+      return runOperation(() => platformApi.completeStaffTask(id, text.value.trim()), '履约任务已完成')
+    case 'public-health-followup':
+      if (!id) return ElMessage.warning('暂无可核验随访')
+      return runOperation(() => platformApi.verifyStaffVisit(id), '随访记录已核验')
+    case 'referral-management':
+      if (!id) return ElMessage.warning('暂无可提交转诊')
+      return runOperation(() => platformApi.submitStaffReferral(id), '转诊已提交区域平台')
+    case 'consultation-replies':
+      if (!id || !text.value.trim()) return ElMessage.warning('请选择留言并填写答复')
+      return runOperation(() => platformApi.replyToMessage(id, text.value.trim()), '答复已发送至居民门户')
     case 'integration':
       if (!id) return ElMessage.warning('请填写或选择交换事件编号')
       return runOperation(() => platformApi.retryIntegration(id), '已触发交换重试')
@@ -182,7 +226,7 @@ async function submitSignature() {
 }
 
 function needsBusinessId(key: string) {
-  return ['feedback', 'checkin-queue', 'encounter', 'prescription', 'prescription-review', 'dispensing', 'billing-counter', 'family-doctor-tasks', 'public-health-followup', 'referral-management', 'consultation-replies', 'integration'].includes(key)
+  return ['contract', 'referral', 'feedback', 'checkin-queue', 'encounter', 'prescription', 'prescription-review', 'dispensing', 'billing-counter', 'family-doctor-tasks', 'public-health-followup', 'referral-management', 'consultation-replies', 'integration'].includes(key)
 }
 
 function actionLabel(key: string) {
@@ -200,6 +244,7 @@ watch(modules, value => {
   if (!value.some(module => module.key === selectedKey.value)) selectedKey.value = value[0]?.key ?? ''
 }, { immediate: true })
 watch(selectedKey, () => {
+  businessId.value = undefined
   activeEncounterAppointmentId.value = undefined
   activeEncounterId.value = undefined
   activeEncounterVersion.value = undefined
@@ -234,9 +279,9 @@ onMounted(() => { if (selectedKey.value && state.value === 'idle') void loadSele
 
         <ModuleStatePanel :state="state" :error-message="errorMessage" :empty-message="`暂无${selectedModule.label}记录`" @retry="loadSelected">
           <div class="business-list">
-            <article v-for="(item, index) in items" :key="String(asRecord(item).id ?? index)">
+            <button v-for="(item, index) in items" :key="String(asRecord(item).id ?? index)" type="button" class="business-row" :class="{ selected: businessId === itemBusinessId(item) }" @click="businessId = itemBusinessId(item)">
               <div><strong>{{ itemTitle(item, index) }}</strong><p>{{ itemDetail(item) }}</p></div><span>{{ itemStatus(item) }}</span>
-            </article>
+            </button>
           </div>
         </ModuleStatePanel>
 
@@ -246,10 +291,13 @@ onMounted(() => { if (selectedKey.value && state.value === 'idle') void loadSele
           <label v-if="selectedKey === 'appointment'">可预约号源
             <select v-model.number="slotId"><option :value="undefined">请选择</option><option v-for="slot in items as SlotView[]" :key="slot.id" :value="slot.id">{{ slot.departmentName }} · {{ slot.staffName }} · 余 {{ slot.remaining }}</option></select>
           </label>
-          <label v-if="needsBusinessId(selectedKey)">{{ selectedKey === 'encounter' ? '预约编号' : '业务单据编号' }}<input v-model.number="businessId" type="number" min="1" inputmode="numeric" /></label>
+          <label v-if="needsBusinessId(selectedKey)">{{ selectedKey === 'encounter' ? '预约记录' : '待办业务' }}
+            <select v-if="items.length" v-model.number="businessId"><option v-for="(item, index) in items" :key="String(itemBusinessId(item) ?? index)" :value="itemBusinessId(item)">{{ itemTitle(item, index) }} · #{{ itemBusinessId(item) }}</option></select>
+            <span v-else class="empty-operation">当前没有可办理单据</span>
+          </label>
           <p v-if="selectedKey === 'encounter' && activeEncounterId" class="encounter-version" role="status">当前接诊 #{{ activeEncounterId }} · 版本 {{ activeEncounterVersion }}</p>
           <label v-if="selectedKey === 'appointment'">就诊原因<textarea v-model="reason" rows="2" maxlength="500" /></label>
-          <label v-if="['record-access', 'consultation', 'feedback', 'encounter', 'prescription', 'prescription-review'].includes(selectedKey)">{{ selectedKey === 'record-access' ? '开放范围' : selectedKey === 'encounter' ? '主诉' : selectedKey === 'prescription' ? '临床诊断' : selectedKey === 'prescription-review' ? '审方意见' : '内容' }}<textarea v-model="text" rows="3" maxlength="1000" /></label>
+          <label v-if="['record-access', 'consultation', 'feedback', 'encounter', 'prescription', 'prescription-review', 'family-doctor-tasks', 'consultation-replies'].includes(selectedKey)">{{ selectedKey === 'record-access' ? '开放范围' : selectedKey === 'encounter' ? '主诉' : selectedKey === 'prescription' ? '临床诊断' : selectedKey === 'prescription-review' ? '审方意见' : selectedKey === 'family-doctor-tasks' ? '履约摘要' : selectedKey === 'consultation-replies' ? '答复内容' : '内容' }}<textarea v-model="text" rows="3" maxlength="1000" /></label>
           <label v-if="['record-access', 'consultation', 'encounter', 'prescription'].includes(selectedKey)">{{ selectedKey === 'record-access' ? '使用目的' : selectedKey === 'encounter' ? '诊断编码（逗号分隔）' : selectedKey === 'prescription' ? '药品明细（SKU编号:数量:用法）' : '留言主题' }}<input v-model="secondaryText" maxlength="120" /></label>
           <label v-if="selectedKey === 'feedback'">评分<select v-model.number="rating"><option v-for="score in 5" :key="score" :value="score">{{ score }} 分</option></select></label>
           <div class="operation-actions">
@@ -264,5 +312,5 @@ onMounted(() => { if (selectedKey.value && state.value === 'idle') void loadSele
 </template>
 
 <style scoped>
-.platform-workbench{display:grid;gap:20px}.workbench-hero{padding:26px 28px;display:flex;align-items:end;justify-content:space-between;border:1px solid #dceae7;border-radius:20px;background:linear-gradient(120deg,#e7f5f1,#fff 72%)}.hero-kicker{color:#0b746e;font-size:10px;font-weight:800;letter-spacing:.12em}.workbench-hero h2{margin:6px 0 7px;font-size:26px}.workbench-hero p{max-width:760px;margin:0;color:#6f8784;font-size:13px;line-height:1.7}.back-link{padding:10px 14px;border:1px solid #cde0dc;border-radius:11px;color:#0b6e69;background:white;text-decoration:none;font-size:12px}.back-link:focus-visible,.module-grid button:focus-visible,.refresh-button:focus-visible,.primary-action:focus-visible,.secondary-action:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #8fd4c8;outline-offset:2px}.workbench-layout{display:grid;grid-template-columns:310px minmax(0,1fr);gap:18px;align-items:start}.module-grid{display:grid;gap:9px}.module-grid button{position:relative;padding:16px 17px 14px;display:grid;grid-template-columns:34px 1fr;gap:3px 10px;border:1px solid #e0eae8;border-radius:15px;color:#234744;background:rgba(255,255,255,.92);text-align:left;cursor:pointer}.module-grid button:hover,.module-grid button.active{border-color:#7ab8ae;background:#eff8f5}.module-grid button.active{box-shadow:inset 4px 0 #0b746e}.module-index{grid-row:1/4;width:30px;height:30px;display:grid;place-items:center;border-radius:9px;color:#0b746e;background:#e0f1ed;font-size:10px;font-weight:800}.module-grid strong{font-size:14px}.module-grid small{color:#7c9290;font-size:10px;line-height:1.5}.module-grid em{margin-top:4px;color:#0b746e;font-size:9px;font-style:normal;font-weight:700}.module-detail{padding:22px}.module-detail>header{display:flex;align-items:start;justify-content:space-between;padding-bottom:18px;border-bottom:1px solid #edf2f1}.module-detail>header span{padding:4px 8px;border-radius:8px;color:#0b746e;background:#e6f4f0;font-size:9px;font-weight:700}.module-detail h3{margin:9px 0 5px;font-size:20px}.module-detail header p{margin:0;color:#7f9491;font-size:12px}.refresh-button{padding:8px 12px;border:1px solid #d3e2df;border-radius:9px;color:#547470;background:white;cursor:pointer}.business-list{display:grid;gap:8px;margin:18px 0}.business-list article{padding:13px 14px;display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid #e5eeec;border-radius:12px}.business-list strong,.business-list p{display:block}.business-list p{margin:4px 0 0;color:#819490;font-size:10px}.business-list article>span{padding:5px 9px;border-radius:9px;color:#0b746e;background:#e7f4f1;font-size:10px;white-space:nowrap}.operation-panel{margin-top:18px;padding:18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 15px;border-radius:15px;background:#f6faf9}.operation-panel h4,.operation-panel>p{grid-column:1/-1}.operation-panel h4{margin:0;font-size:15px}.safety-note{margin:0;padding:10px 12px;border-left:3px solid #d1a04f;color:#7d653d;background:#fff8ea;font-size:11px;line-height:1.55}.operation-panel label{display:grid;gap:6px;color:#526d69;font-size:11px}.operation-panel input,.operation-panel select,.operation-panel textarea{width:100%;padding:9px 10px;border:1px solid #cfddda;border-radius:9px;color:#244845;background:white;resize:vertical}.operation-actions{align-self:end;display:flex;gap:8px}.primary-action,.secondary-action{min-height:39px;padding:9px 15px;border-radius:10px;cursor:pointer;font-weight:700}.primary-action{border:0;color:white;background:#0b746e}.secondary-action{border:1px solid #0b746e;color:#0b746e;background:white}.primary-action:disabled,.secondary-action:disabled{opacity:.55;cursor:wait}.no-access{padding:32px;text-align:center}.no-access p{color:#7f9290}@media(max-width:950px){.workbench-layout{grid-template-columns:1fr}.module-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.workbench-hero{align-items:start;gap:18px}.operation-panel{grid-template-columns:1fr}}@media(max-width:620px){.module-grid{grid-template-columns:1fr}.workbench-hero{padding:20px;display:grid}.operation-panel{padding:14px}}
+.platform-workbench{display:grid;gap:20px}.workbench-hero{padding:26px 28px;display:flex;align-items:end;justify-content:space-between;border:1px solid #dceae7;border-radius:20px;background:linear-gradient(120deg,#e7f5f1,#fff 72%)}.hero-kicker{color:#0b746e;font-size:10px;font-weight:800;letter-spacing:.12em}.workbench-hero h2{margin:6px 0 7px;font-size:26px}.workbench-hero p{max-width:760px;margin:0;color:#6f8784;font-size:13px;line-height:1.7}.back-link{padding:10px 14px;border:1px solid #cde0dc;border-radius:11px;color:#0b6e69;background:white;text-decoration:none;font-size:12px}.back-link:focus-visible,.module-grid button:focus-visible,.refresh-button:focus-visible,.primary-action:focus-visible,.secondary-action:focus-visible,.business-row:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #8fd4c8;outline-offset:2px}.workbench-layout{display:grid;grid-template-columns:310px minmax(0,1fr);gap:18px;align-items:start}.module-grid{display:grid;gap:9px}.module-grid button{position:relative;padding:16px 17px 14px;display:grid;grid-template-columns:34px 1fr;gap:3px 10px;border:1px solid #e0eae8;border-radius:15px;color:#234744;background:rgba(255,255,255,.92);text-align:left;cursor:pointer}.module-grid button:hover,.module-grid button.active{border-color:#7ab8ae;background:#eff8f5}.module-grid button.active{box-shadow:inset 4px 0 #0b746e}.module-index{grid-row:1/4;width:30px;height:30px;display:grid;place-items:center;border-radius:9px;color:#0b746e;background:#e0f1ed;font-size:10px;font-weight:800}.module-grid strong{font-size:14px}.module-grid small{color:#7c9290;font-size:10px;line-height:1.5}.module-grid em{margin-top:4px;color:#0b746e;font-size:9px;font-style:normal;font-weight:700}.module-detail{padding:22px}.module-detail>header{display:flex;align-items:start;justify-content:space-between;padding-bottom:18px;border-bottom:1px solid #edf2f1}.module-detail>header span{padding:4px 8px;border-radius:8px;color:#0b746e;background:#e6f4f0;font-size:9px;font-weight:700}.module-detail h3{margin:9px 0 5px;font-size:20px}.module-detail header p{margin:0;color:#7f9491;font-size:12px}.refresh-button{padding:8px 12px;border:1px solid #d3e2df;border-radius:9px;color:#547470;background:white;cursor:pointer}.business-list{display:grid;gap:8px;margin:18px 0}.business-row{width:100%;padding:13px 14px;display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid #e5eeec;border-radius:12px;color:inherit;background:white;text-align:left;cursor:pointer}.business-row:hover,.business-row.selected{border-color:#79b7ad;background:#f1f8f6}.business-list strong,.business-list p{display:block}.business-list p{margin:4px 0 0;color:#819490;font-size:10px}.business-row>span{padding:5px 9px;border-radius:9px;color:#0b746e;background:#e7f4f1;font-size:10px;white-space:nowrap}.operation-panel{margin-top:18px;padding:18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 15px;border-radius:15px;background:#f6faf9}.operation-panel h4,.operation-panel>p{grid-column:1/-1}.operation-panel h4{margin:0;font-size:15px}.safety-note{margin:0;padding:10px 12px;border-left:3px solid #d1a04f;color:#7d653d;background:#fff8ea;font-size:11px;line-height:1.55}.operation-panel label{display:grid;gap:6px;color:#526d69;font-size:11px}.operation-panel input,.operation-panel select,.operation-panel textarea{width:100%;padding:9px 10px;border:1px solid #cfddda;border-radius:9px;color:#244845;background:white;resize:vertical}.empty-operation{padding:9px 10px;border:1px dashed #cfddda;border-radius:9px;color:#819490;background:#fff}.operation-actions{align-self:end;display:flex;gap:8px}.primary-action,.secondary-action{min-height:39px;padding:9px 15px;border-radius:10px;cursor:pointer;font-weight:700}.primary-action{border:0;color:white;background:#0b746e}.secondary-action{border:1px solid #0b746e;color:#0b746e;background:white}.primary-action:disabled,.secondary-action:disabled{opacity:.55;cursor:wait}.no-access{padding:32px;text-align:center}.no-access p{color:#7f9290}@media(max-width:950px){.workbench-layout{grid-template-columns:1fr}.module-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.workbench-hero{align-items:start;gap:18px}.operation-panel{grid-template-columns:1fr}}@media(max-width:620px){.module-grid{grid-template-columns:1fr}.workbench-hero{padding:20px;display:grid}.operation-panel{padding:14px}}
 </style>

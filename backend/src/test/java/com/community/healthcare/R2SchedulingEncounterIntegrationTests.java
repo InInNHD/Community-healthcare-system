@@ -62,6 +62,13 @@ class R2SchedulingEncounterIntegrationTests {
         MvcResult first = residentJson(book, f.patientId, Map.of("slotId", slotId, "reason", "血压复诊"))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.status").value("CONFIRMED")).andReturn();
         long appointmentId = number(first, "$.id");
+        residentJson(get("/api/v1/resident/scheduling/appointments"), f.patientId, Map.of())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(appointmentId))
+                .andExpect(jsonPath("$[0].patientName").value("预约居民"));
+        staffJson(get("/api/v1/staff/scheduling/appointments"), f.doctorStaffId, "DOCTOR", Map.of())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(appointmentId));
         MvcResult replay = residentJson(post("/api/v1/resident/scheduling/appointments")
                         .header("Idempotency-Key", "book-" + f.suffix), f.patientId,
                         Map.of("slotId", slotId, "reason", "血压复诊"))
@@ -74,6 +81,10 @@ class R2SchedulingEncounterIntegrationTests {
         staffJson(post("/api/v1/staff/scheduling/appointments/{id}/check-in", appointmentId),
                 f.nurseStaffId, "NURSE", Map.of())
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("CHECKED_IN"));
+        staffJson(get("/api/v1/staff/scheduling/queue"), f.nurseStaffId, "NURSE", Map.of())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].appointmentId").value(appointmentId))
+                .andExpect(jsonPath("$[0].residentName").value("预约居民"));
         MvcResult encounter = staffJson(post("/api/v1/staff/scheduling/appointments/{id}/start", appointmentId),
                 f.doctorStaffId, "DOCTOR", Map.of())
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.status").value("DRAFT")).andReturn();

@@ -9,6 +9,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /** 收费员端账单、支付、退款及模拟医保申报入口。 */
 @RestController
@@ -17,6 +18,12 @@ import java.math.BigDecimal;
 public class R3BillingController {
     private final R3PharmacyBillingService service;
     public R3BillingController(R3PharmacyBillingService service) { this.service = service; }
+
+    /** 查询当前收费员站点范围内的账单。 */
+    @GetMapping("/invoices")
+    List<R3PharmacyBillingService.InvoiceView> invoices(@AuthenticationPrincipal Jwt jwt) {
+        return service.staffInvoices(staffId(jwt));
+    }
 
     /** 创建收费账单。 */
     @PostMapping("/invoices") @ResponseStatus(HttpStatus.CREATED)

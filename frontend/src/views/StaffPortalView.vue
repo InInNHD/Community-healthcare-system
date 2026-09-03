@@ -5,7 +5,6 @@ import {
   Bell,
   Box,
   Calendar,
-  Checked,
   CircleCheck,
   Clock,
   DataAnalysis,
@@ -31,7 +30,7 @@ import {
   type PortalModuleState,
 } from '../features/portal/module-state'
 
-type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
+type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'CHECKED_IN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
 type PortalSection = 'overview' | 'appointments' | 'patients' | 'health' | 'chronic' | 'inventory'
 
 interface StaffSummary {
@@ -142,13 +141,7 @@ const staffApi = {
     return data
   },
   async appointments() {
-    const { data } = await http.get<StaffAppointment[] | ListPayload<StaffAppointment>>('/staff/appointments', {
-      params: { today: true, size: 100 },
-    })
-    return data
-  },
-  async updateAppointmentStatus(id: number, status: AppointmentStatus) {
-    const { data } = await http.patch<StaffAppointment>(`/staff/appointments/${id}/status`, { status })
+    const { data } = await http.get<StaffAppointment[]>('/v1/staff/scheduling/appointments')
     return data
   },
   async patients(keyword = '') {
@@ -246,8 +239,11 @@ const navigation: Array<{ key: PortalSection; label: string; icon: unknown }> = 
 const statusMeta: Record<AppointmentStatus, { text: string; type: 'warning' | 'primary' | 'success' | 'info' }> = {
   PENDING: { text: '待确认', type: 'warning' },
   CONFIRMED: { text: '已确认', type: 'primary' },
+  CHECKED_IN: { text: '已签到', type: 'primary' },
+  IN_PROGRESS: { text: '接诊中', type: 'warning' },
   COMPLETED: { text: '已完成', type: 'success' },
   CANCELLED: { text: '已取消', type: 'info' },
+  NO_SHOW: { text: '未到诊', type: 'info' },
 }
 
 const filteredAppointments = computed(() => appointmentFilter.value === 'ALL'
@@ -480,19 +476,6 @@ async function refreshCurrentSection() {
   }
 }
 
-async function changeAppointmentStatus(item: StaffAppointment, status: AppointmentStatus) {
-  const original = item.status
-  item.status = status
-  try {
-    const updated = await staffApi.updateAppointmentStatus(item.id, status)
-    Object.assign(item, updated)
-    ElMessage.success(status === 'CONFIRMED' ? '预约已确认' : status === 'COMPLETED' ? '已完成本次接诊' : '预约状态已更新')
-    await loadSummary()
-  } catch {
-    item.status = original
-  }
-}
-
 async function openPatient(patient: StaffPatient) {
   selectedPatient.value = patient
   patientDrawerVisible.value = true
@@ -676,14 +659,9 @@ onMounted(loadPortal)
           <el-table-column prop="reason" label="服务事由" min-width="190" show-overflow-tooltip />
           <el-table-column label="联系电话" min-width="135"><template #default="scope">{{ scope.row.patientPhone || '—' }}</template></el-table-column>
           <el-table-column label="状态" width="104"><template #default="scope"><el-tag :type="statusMeta[scope.row.status as AppointmentStatus].type" effect="light" round>{{ statusMeta[scope.row.status as AppointmentStatus].text }}</el-tag></template></el-table-column>
-          <el-table-column label="处理" fixed="right" width="210">
+          <el-table-column label="处理" fixed="right" width="140">
             <template #default="scope">
-              <el-button v-if="scope.row.status === 'PENDING'" size="small" type="primary" :icon="Checked" @click="changeAppointmentStatus(scope.row, 'CONFIRMED')">确认</el-button>
-              <el-button v-if="scope.row.status === 'CONFIRMED'" size="small" type="success" :icon="CircleCheck" @click="changeAppointmentStatus(scope.row, 'COMPLETED')">完成接诊</el-button>
-              <el-dropdown v-if="scope.row.status === 'PENDING' || scope.row.status === 'CONFIRMED'" @command="changeAppointmentStatus(scope.row, $event as AppointmentStatus)">
-                <el-button size="small" text>更多</el-button>
-                <template #dropdown><el-dropdown-menu><el-dropdown-item command="CANCELLED">取消预约</el-dropdown-item></el-dropdown-menu></template>
-              </el-dropdown>
+              <router-link v-if="scope.row.status !== 'COMPLETED' && scope.row.status !== 'CANCELLED'" to="/staff/operations" class="operation-link">进入业务中心</router-link>
               <span v-else class="handled-text">已处理</span>
             </template>
           </el-table-column>
@@ -836,7 +814,7 @@ onMounted(loadPortal)
 .summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.summary-card{padding:19px;display:flex;align-items:center;gap:15px}.summary-icon{width:49px;height:49px;display:grid;place-items:center;flex:none;border-radius:15px;font-size:23px}.summary-card small,.summary-card strong,.summary-card p{display:block}.summary-card small{color:#78918e;font-size:12px}.summary-card strong{margin-top:2px;font-size:28px;line-height:1}.summary-card p{margin:6px 0 0;color:#91a29f;font-size:11px}
 .overview-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(330px,.85fr);gap:18px}.panel{padding:21px}.panel-header,.section-toolbar{display:flex;align-items:center;justify-content:space-between;gap:18px}.panel-header{margin-bottom:16px}.panel-header h3,.section-toolbar h3{margin:0 0 5px;font-size:17px}.panel-header p,.section-toolbar p{margin:0;color:#839997;font-size:12px}.timeline-list{display:grid}.timeline-item{min-height:62px;display:grid;grid-template-columns:67px 17px 1fr;align-items:center}.appointment-time b,.appointment-time span{display:block}.appointment-time b{font-size:15px}.appointment-time span{margin-top:4px;color:#93a4a1;font-size:10px}.timeline-dot{position:relative;width:9px;height:9px;border:2px solid white;border-radius:50%;background:#e4aa58;box-shadow:0 0 0 3px #f9e8d1}.timeline-dot.confirmed{background:#3ca582;box-shadow:0 0 0 3px #d9f1e8}.timeline-dot:after{content:'';position:absolute;top:10px;left:2px;width:1px;height:48px;background:#e6eeec}.timeline-item:last-child .timeline-dot:after{display:none}.appointment-main{min-width:0;padding:10px 0 10px 5px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #eff3f2}.appointment-main strong,.appointment-main span{display:block}.appointment-main strong{font-size:14px}.appointment-main span{margin-top:4px;color:#849a97;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.appointment-main>div{min-width:0}.reminder-stack{display:grid;gap:10px}.reminder{width:100%;padding:14px;display:grid;grid-template-columns:42px 1fr 18px;align-items:center;gap:12px;border:0;border-radius:14px;text-align:left;cursor:pointer}.reminder>span{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;font-size:18px}.reminder>div strong,.reminder>div p{display:block}.reminder>div strong{font-size:13px}.reminder>div p{margin:4px 0 0;color:#84938f;font-size:10px}.reminder.pending{background:#fff7eb}.reminder.pending>span{color:#a86b20;background:#ffe9c8}.reminder.risk{background:#fdf0f1}.reminder.risk>span{color:#af4b52;background:#fbdcdf}.reminder.stock{background:#eef6f4}.reminder.stock>span{color:#196f65;background:#dceee9}.reminder>.el-icon{color:#9cafac}
 .quick-patients{padding:21px}.patient-card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.mini-patient-card{min-width:0;padding:14px;display:grid;grid-template-columns:40px 1fr;gap:10px 11px;align-items:center;border:1px solid #e8efed;border-radius:14px}.patient-avatar{width:40px;height:40px;display:grid;place-items:center;flex:none;border-radius:13px;color:#116a62;background:#dff1ed;font-weight:800}.patient-avatar.large{width:48px;height:48px;border-radius:15px;font-size:17px}.mini-patient-info{min-width:0}.mini-patient-info strong,.mini-patient-info p{display:block}.mini-patient-info p{margin:4px 0 0;color:#849794;font-size:11px}.mini-patient-card .el-button{margin:0}
-.section-panel{padding:0;overflow:hidden}.section-toolbar{padding:20px 22px;border-bottom:1px solid #edf2f1}.portal-table{padding:5px 18px 16px}.table-time b,.table-time span{display:block}.table-time b{font-size:15px}.table-time span{margin-top:2px;color:#91a39f;font-size:10px}.person-cell{display:flex;align-items:center;gap:10px}.person-cell>span{width:34px;height:34px;display:grid;place-items:center;flex:none;border-radius:11px;color:#146c64;background:#e3f2ef;font-weight:700}.person-cell b,.person-cell small{display:block}.person-cell small{margin-top:3px;color:#91a19f;font-size:10px}.person-cell.compact>span{width:32px;height:32px}.handled-text{color:#94a3a1;font-size:12px}
+.section-panel{padding:0;overflow:hidden}.section-toolbar{padding:20px 22px;border-bottom:1px solid #edf2f1}.portal-table{padding:5px 18px 16px}.table-time b,.table-time span{display:block}.table-time b{font-size:15px}.table-time span{margin-top:2px;color:#91a39f;font-size:10px}.person-cell{display:flex;align-items:center;gap:10px}.person-cell>span{width:34px;height:34px;display:grid;place-items:center;flex:none;border-radius:11px;color:#146c64;background:#e3f2ef;font-weight:700}.person-cell b,.person-cell small{display:block}.person-cell small{margin-top:3px;color:#91a19f;font-size:10px}.person-cell.compact>span{width:32px;height:32px}.operation-link{padding:6px 10px;border-radius:8px;color:white;background:#146b63;text-decoration:none;font-size:11px}.handled-text{color:#94a3a1;font-size:12px}
 .patient-search-banner{padding:22px 24px;display:grid;grid-template-columns:1fr minmax(390px,.8fr);align-items:center;gap:28px}.patient-search-banner>div{display:flex;align-items:center;gap:14px}.patient-search-banner>div>span{width:46px;height:46px;display:grid;place-items:center;border-radius:14px;color:#126b63;background:#e2f2ee;font-size:20px}.patient-search-banner h3{margin:0 0 5px;font-size:18px}.patient-search-banner p{margin:0;color:#819694;font-size:12px}.patient-results{overflow:visible}.resident-list{padding:0 22px 18px}.resident-row{min-height:88px;display:grid;grid-template-columns:48px minmax(150px,1fr) minmax(220px,1.45fr) minmax(145px,.8fr) auto;align-items:center;gap:15px;border-bottom:1px solid #edf2f1}.resident-row:last-child{border-bottom:0}.resident-identity strong{font-size:14px}.resident-identity p{margin:5px 0 0;color:#839795;font-size:11px}.resident-contact{min-width:0;display:grid;gap:6px}.resident-contact span{display:flex;align-items:center;gap:6px;color:#687f7c;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.resident-contact .el-icon{color:#94aaa7}.resident-tags{display:grid;justify-items:start;gap:5px}.resident-tags>span{color:#91a3a0;font-size:10px}.resident-actions{display:flex;gap:8px}.resident-actions .el-button{margin:0}
 .metric-guide{margin:18px 20px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.metric-guide>div{padding:13px;display:flex;align-items:center;gap:10px;border-radius:13px;background:#f7faf9}.metric-icon{width:35px;height:35px;display:grid;place-items:center;flex:none;border-radius:11px;font-size:11px;font-weight:800}.metric-icon.heart{color:#b64850;background:#fde2e4;font-size:17px}.metric-icon.pressure{color:#7655a1;background:#eee8f7}.metric-icon.oxygen{color:#237096;background:#e1f1f9}.metric-icon.weight{color:#26775d;background:#dff1e8}.metric-guide strong,.metric-guide small{display:block}.metric-guide strong{font-size:12px}.metric-guide small{margin-top:3px;color:#899b98;font-size:9px}
 .risk-summary{margin:18px 20px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.risk-summary>div{padding:15px 17px;display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:10px;border-radius:14px;background:#f3f8f6}.risk-summary>div.risk-high{background:#fff0f1}.risk-summary b{grid-row:1/3;font-size:25px}.risk-summary span{font-size:12px;font-weight:700}.risk-summary small{color:#8ca09d;font-size:10px}.risk-high b{color:#ad454d}

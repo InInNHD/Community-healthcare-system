@@ -11,7 +11,22 @@ export interface PlatformTransport {
   delete<T = unknown>(url: string): TransportResult<T>
 }
 
-export interface SlotView { id: number; startsAt: string; departmentName: string; staffName: string; remaining: number }
+export interface SlotView { id: number; startsAt: string; endsAt: string; departmentName: string; staffName: string; remaining: number }
+export interface ScheduledAppointmentItem {
+  id: number
+  appointmentNo?: string
+  patientId: number
+  patientName?: string
+  doctorId?: number
+  doctorName?: string
+  staffProfileId: number
+  staffName: string
+  department?: string
+  departmentName?: string
+  scheduledAt: string
+  status: 'PENDING' | 'CONFIRMED' | 'CHECKED_IN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
+  reason: string
+}
 export interface AppointmentCommand { slotId: number; reason: string }
 export interface ContractConfirmation { accepted: boolean }
 export interface ConsultationCommand { category: string; content: string }
@@ -47,6 +62,7 @@ export function createPlatformApi(transport: PlatformTransport = http) {
 
   return {
     listResidentSlots: () => transport.get<SlotView[]>('/v1/resident/scheduling/slots'),
+    listResidentAppointments: () => transport.get<ScheduledAppointmentItem[]>('/v1/resident/scheduling/appointments'),
     createResidentAppointment: (command: AppointmentCommand) => transport.post('/v1/resident/scheduling/appointments', command, idempotencyOptions()),
     cancelResidentAppointment: (appointmentId: number) => transport.delete(`/v1/resident/scheduling/appointments/${appointmentId}`),
     listResidentInvoices: () => transport.get<WorkItem[]>('/v1/resident/billing/invoices'),
@@ -64,6 +80,8 @@ export function createPlatformApi(transport: PlatformTransport = http) {
       businessType: 'COMMUNITY_SERVICE', businessId: String(command.serviceId), rating: command.rating, comments: command.comment,
     }),
     listStaffQueue: () => transport.get<QueueView[]>('/v1/staff/scheduling/queue'),
+    listStaffAppointments: () => transport.get<ScheduledAppointmentItem[]>('/v1/staff/scheduling/appointments'),
+    listStaffEncounters: () => transport.get<EncounterView[]>('/v1/staff/encounters'),
     checkInAppointment: (appointmentId: number) => transport.post(`/v1/staff/scheduling/appointments/${appointmentId}/check-in`, {}),
     startEncounter: async (appointmentId: number) => {
       const result = await transport.post<EncounterView>(`/v1/staff/scheduling/appointments/${appointmentId}/start`, {})
@@ -87,15 +105,31 @@ export function createPlatformApi(transport: PlatformTransport = http) {
       return result
     },
     createPrescription: (command: PrescriptionCommand) => transport.post('/v1/staff/pharmacy/prescriptions', command),
+    listPrescriptions: () => transport.get<WorkItem[]>('/v1/staff/pharmacy/prescriptions'),
+    listMedicineSkus: () => transport.get<WorkItem[]>('/v1/staff/pharmacy/skus'),
     signPrescription: (prescriptionId: number) => transport.post(`/v1/staff/pharmacy/prescriptions/${prescriptionId}/sign`, {}, idempotencyOptions()),
     reviewPrescription: (prescriptionId: number, approved: boolean, comment: string) => transport.post(`/v1/staff/pharmacy/prescriptions/${prescriptionId}/review`, { approved, comment }, idempotencyOptions()),
+    pickPrescription: (prescriptionId: number) => transport.post(`/v1/staff/pharmacy/prescriptions/${prescriptionId}/pick`, {}),
+    checkPrescription: (prescriptionId: number) => transport.post(`/v1/staff/pharmacy/prescriptions/${prescriptionId}/check`, {}),
     dispensePrescription: (prescriptionId: number, _command: DispensingCommand) => transport.post(`/v1/staff/pharmacy/prescriptions/${prescriptionId}/dispense`, {}, idempotencyOptions()),
-    listStaffTasks: () => transport.get<WorkItem[]>('/v1/staff/work-items'),
+    listStaffInvoices: () => transport.get<WorkItem[]>('/v1/staff/billing/invoices'),
+    issueInvoice: (invoiceId: number) => transport.post(`/v1/staff/billing/invoices/${invoiceId}/issue`, {}),
+    listStaffTasks: () => transport.get<WorkItem[]>('/v1/staff/family-doctor/tasks'),
+    completeStaffTask: (taskId: number, summary: string) => transport.post(`/v1/staff/family-doctor/tasks/${taskId}/complete`, { summary }, idempotencyOptions()),
+    listStaffVisits: () => transport.get<WorkItem[]>('/v1/staff/public-health/visits'),
+    verifyStaffVisit: (visitId: number) => transport.post(`/v1/staff/public-health/visits/${visitId}/verify`, {}, idempotencyOptions()),
+    listStaffReferrals: () => transport.get<WorkItem[]>('/v1/staff/referrals'),
+    submitStaffReferral: (referralId: number) => transport.post(`/v1/staff/referrals/${referralId}/submit`, {}, idempotencyOptions()),
+    listStaffMessages: () => transport.get<WorkItem[]>('/v1/staff/messages'),
+    replyToMessage: (messageId: number, body: string) => transport.post(`/v1/staff/messages/${messageId}/replies`, { body }),
     listOrganizations: () => transport.get<WorkItem[]>('/v1/admin/organizations'),
+    listServicePackages: () => transport.get<WorkItem[]>('/v1/admin/family-doctor/catalog'),
     listIntegrations: () => transport.get<WorkItem[]>('/v1/admin/integrations/outbox'),
     retryIntegration: (eventId: number) => transport.post(`/v1/admin/integrations/outbox/${eventId}/retry`, {}),
     listQualityMetrics: () => transport.get<QualityMetric[]>('/v1/admin/quality/snapshots'),
     refreshQualityMetrics: () => transport.post('/v1/admin/quality/snapshots/refresh', {}),
+    listRecordReleases: () => transport.get<WorkItem[]>('/v1/resident/records/releases'),
+    listFeedback: () => transport.get<WorkItem[]>('/v1/resident/feedback'),
   }
 }
 

@@ -33,6 +33,10 @@ app:
   bootstrap:
     # 兼容临床演示数据初始化器的总开关，仅 dev/demo 配置启用。
     enabled: false
+  integration:
+    outbox-dispatch:
+      enabled: false
+      poll-delay-ms: 5000
   security:
     jwt:
       # JWT 同时校验 issuer、audience、有效期和 kid 对应的轮换密钥。
@@ -72,6 +76,10 @@ management:
   endpoints.web.exposure.include: health,info,metrics
   endpoint.health.probes.enabled: true
 
+logging:
+  # 关联号同时写回 X-Request-ID，便于从前端报错定位同一条服务端日志和审计记录。
+  pattern.level: "%5p [request:%X{correlationId:-background}]"
+
 ---
 # 开发/演示共享配置：初始化可预填的演示账号，并保留首次登录改密能力。
 spring:
@@ -110,7 +118,8 @@ spring:
   jpa.hibernate.ddl-auto: validate
   flyway:
     enabled: true
-    baseline-on-migrate: true
+    # 正式环境约定从空库启用；发现未受管的旧表时应停止，而不是跳过首批迁移。
+    baseline-on-migrate: false
 app:
   portal:
     organization-name: ${PORTAL_ORGANIZATION_NAME}
@@ -119,6 +128,9 @@ app:
     emergency-phone: ${PORTAL_EMERGENCY_PHONE}
   bootstrap:
     enabled: false
+  integration:
+    outbox-dispatch:
+      enabled: true
   security:
     jwt:
       issuer: ${JWT_ISSUER:community-healthcare}

@@ -9,12 +9,28 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+import java.util.Map;
+
 /** 医生和药师共享的处方流转入口，端点权限按具体职责细分。 */
 @RestController
 @RequestMapping("/api/v1/staff/pharmacy")
 public class R3PharmacyController {
     private final R3PharmacyBillingService service;
     public R3PharmacyController(R3PharmacyBillingService service) { this.service = service; }
+
+    /** 返回当前医生或药师可见的处方队列。 */
+    @GetMapping("/prescriptions")
+    @PreAuthorize("hasAnyRole('DOCTOR','PHARMACIST')")
+    List<R3PharmacyBillingService.PrescriptionView> prescriptions(@AuthenticationPrincipal Jwt jwt) {
+        return hasRole(jwt, "DOCTOR") ? service.doctorPrescriptions(staffId(jwt))
+                : service.pharmacyPrescriptions(staffId(jwt));
+    }
+
+    /** 返回处方可选药品及可用库存。 */
+    @GetMapping("/skus")
+    @PreAuthorize("hasAnyRole('DOCTOR','PHARMACIST')")
+    List<Map<String, Object>> skus() { return service.medicineSkus(); }
 
     /** 医生基于线下已签署接诊创建处方。 */
     @PostMapping("/prescriptions")
@@ -66,5 +82,10 @@ public class R3PharmacyController {
         if (!(value instanceof Number)) value = jwt.getClaim("staffId");
         if (!(value instanceof Number number)) throw new IllegalArgumentException("令牌缺少医护人员标识");
         return number.longValue();
+    }
+
+    private boolean hasRole(Jwt jwt, String role) {
+        Object roles = jwt.getClaim("roles");
+        return roles instanceof List<?> values && values.contains(role);
     }
 }

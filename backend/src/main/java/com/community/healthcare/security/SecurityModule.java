@@ -527,20 +527,31 @@ class AuthController {
     private final AccountPasswordService passwords;
     private final SecurityProperties properties;
     private final AuthCookieService cookies;
+    private final LoginAttemptGuard loginGuard;
     AuthController(AuthenticationManager authenticationManager, MfaAuthenticationService mfa,
-                   AccountPasswordService passwords, SecurityProperties properties, AuthCookieService cookies) {
+                   AccountPasswordService passwords, SecurityProperties properties, AuthCookieService cookies,
+                   LoginAttemptGuard loginGuard) {
         this.authenticationManager = authenticationManager; this.mfa = mfa;
-        this.passwords = passwords; this.properties = properties; this.cookies = cookies;
+        this.passwords = passwords; this.properties = properties; this.cookies = cookies; this.loginGuard = loginGuard;
     }
     @PostMapping("/login")
-    org.springframework.http.ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(request.username(), request.password()));
-        LoginAttempt attempt = mfa.authenticate(authentication, request.portal());
-        if (attempt.needsMfa()) {
-            return org.springframework.http.ResponseEntity.accepted().body(attempt.challenge());
+    org.springframework.http.ResponseEntity<?> login(@Valid @RequestBody LoginRequest request,
+                                                      jakarta.servlet.http.HttpServletRequest servletRequest) {
+        String source = servletRequest.getRemoteAddr();
+        loginGuard.check(request.username(), source);
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(request.username(), request.password()));
+            LoginAttempt attempt = mfa.authenticate(authentication, request.portal());
+            if (attempt.needsMfa()) {
+                return org.springframework.http.ResponseEntity.accepted().body(attempt.challenge());
+            }
+            loginGuard.succeeded(request.username(), source);
+            return authenticated(attempt.login());
+        } catch (org.springframework.security.core.AuthenticationException ex) {
+            loginGuard.failed(request.username(), source);
+            throw ex;
         }
-        return authenticated(attempt.login());
     }
 
     @PostMapping("/mfa/verify")
@@ -592,7 +603,8 @@ class AuthController {
 }
 
 /** 密码登录请求；{@code portal} 用于额外验证账号所属入口。 */
-record LoginRequest(@NotBlank String username, @NotBlank String password, String portal) {}
+record LoginRequest(@NotBlank @Size(max = 64) String username,
+                    @NotBlank @Size(max = 128) String password, String portal) {}
 /** MFA 挑战验证请求，验证码固定为六位数字。 */
 record MfaVerificationRequest(@NotBlank String challengeToken,
                               @NotBlank @jakarta.validation.constraints.Pattern(regexp = "\\d{6}") String code) {}

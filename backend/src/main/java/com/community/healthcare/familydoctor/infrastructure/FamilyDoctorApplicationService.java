@@ -1,5 +1,7 @@
 package com.community.healthcare.familydoctor.infrastructure;
 
+import com.community.healthcare.observability.RequestCorrelationFilter;
+
 import com.community.healthcare.familydoctor.domain.ContractStatus;
 import com.community.healthcare.familydoctor.domain.ServiceTaskStatus;
 import com.community.healthcare.residentregistry.application.StaffPatientScope;
@@ -65,6 +67,12 @@ public class FamilyDoctorApplicationService {
     /** 查询居民本人的签约记录。 */
     public List<Map<String,Object>> residentContracts(long patientId){ return jdbc.queryForList("select id,team_id,package_id,status,starts_on,ends_on,resident_confirmed_at,version from fd_contract where patient_id=? order by id desc",patientId); }
 
+    /** 返回管理端家庭医生团队和服务包配置。 */
+    public List<Map<String,Object>> adminCatalog(){return jdbc.queryForList("select id,name,'TEAM' as item_type,case when active then 'ACTIVE' else 'INACTIVE' end as status,code from care_team union all select id,name,'PACKAGE' as item_type,case when active then 'ACTIVE' else 'INACTIVE' end as status,code from service_package order by item_type,id desc");}
+
+    /** 返回当前医护所在团队可办理的履约任务。 */
+    public List<Map<String,Object>> staffTasks(long staffId){return jdbc.queryForList("select t.id,t.patient_id,t.task_type as title,t.status,t.due_at,t.assigned_staff_id from fd_service_task t where t.assigned_staff_id=? or exists(select 1 from care_team_member m where m.team_id=t.team_id and m.staff_profile_id=? and m.active=true) order by t.due_at,t.id",staffId,staffId);}
+
     /** 从生效合同生成可分派的履约任务。 */
     @Transactional public Map<String,Object> createTask(long actor,String key,TaskCommand c) {
         requireKey(key); List<Map<String,Object>> replay=jdbc.queryForList("select * from fd_service_task where idempotency_key=?",key); if(!replay.isEmpty())return replay.get(0);
@@ -105,7 +113,7 @@ public class FamilyDoctorApplicationService {
         if(table.equals("fd_contract_history"))jdbc.update("insert into fd_contract_history(contract_id,from_status,to_status,actor_type,actor_id,reason,occurred_at) values(?,?,?,?,?,?,current_timestamp)",id,from,to,actorType,actor,reason);
         else jdbc.update("insert into fd_service_task_history(task_id,from_status,to_status,actor_staff_id,reason,occurred_at) values(?,?,?,?,?,current_timestamp)",id,from,to,actor==0?null:actor,reason);
     }
-    private void audit(String actor,String role,String action,String type,long id){ jdbc.update("insert into audit_event(occurred_at,actor,actor_role,action,resource_type,resource_id,outcome,purpose,details_json,correlation_id) values(current_timestamp,?,?,?,?,?,'SUCCESS','workflow','{}',null)",actor,role,action,type,String.valueOf(id)); }
+    private void audit(String actor,String role,String action,String type,long id){ jdbc.update("insert into audit_event(occurred_at,actor,actor_role,action,resource_type,resource_id,outcome,purpose,details_json,correlation_id) values(current_timestamp,?,?,?,?,?,'SUCCESS','workflow','{}',?)",actor,role,action,type,String.valueOf(id), RequestCorrelationFilter.current()); }
     private boolean replayed(String scope,String actor,String key){return jdbc.queryForObject("select count(*) from idempotency_record where operation_scope=? and actor_id=? and idempotency_key=?",Integer.class,scope,actor,key)>0;}
     private void remember(String scope,String actor,String key,long id){jdbc.update("insert into idempotency_record(operation_scope,actor_id,idempotency_key,request_hash,resource_id,response_json,created_at,expires_at) values(?,?,?,'r4',?,'{}',?,?)",scope,actor,key,String.valueOf(id),LocalDateTime.now(),LocalDateTime.now().plusDays(1));}
     private Map<String,Object> contract(long id){return row("select * from fd_contract where id=?",id);} private Map<String,Object> task(long id){return row("select * from fd_service_task where id=?",id);}

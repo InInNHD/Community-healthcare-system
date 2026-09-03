@@ -1,5 +1,7 @@
 package com.community.healthcare.scheduling.infrastructure;
 
+import com.community.healthcare.observability.RequestCorrelationFilter;
+
 import com.community.healthcare.scheduling.application.IdempotencyKey;
 import com.community.healthcare.scheduling.domain.AppointmentStatus;
 import jakarta.persistence.EntityNotFoundException;
@@ -13,6 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
@@ -79,10 +82,72 @@ public class R2ClinicalApplicationService {
     /** 查询当前时刻之后仍开放的号源，按开始时间排序。 */
     @Transactional(readOnly = true)
     public List<SlotView> availableSlots() {
-        return slots.findByStatusAndStartsAtAfterOrderByStartsAtAsc(
-                        com.community.healthcare.scheduling.domain.SlotStatus.OPEN, LocalDateTime.now()).stream()
-                .map(slot -> new SlotView(slot.id, slot.sessionId, slot.startsAt, slot.endsAt, slot.status.name(), slot.version))
+        return jdbc.query("select sl.id,sl.session_id,sl.starts_at,sl.ends_at,sl.status,sl.version," +
+                        "ss.site_id,ss.department_id,ss.staff_profile_id,sp.name staff_name,d.name department_name " +
+                        "from sched_slot sl join sched_session ss on ss.id=sl.session_id " +
+                        "join staff_profile sp on sp.id=ss.staff_profile_id left join department d on d.id=ss.department_id " +
+                        "where sl.status='OPEN' and sl.starts_at>? order by sl.starts_at",
+                (rs, row) -> new SlotView(rs.getLong("id"), rs.getLong("session_id"),
+                        rs.getObject("starts_at", LocalDateTime.class), rs.getObject("ends_at", LocalDateTime.class),
+                        rs.getString("status"), rs.getLong("version"), rs.getLong("site_id"),
+                        rs.getLong("department_id"), rs.getString("department_name"),
+                        rs.getLong("staff_profile_id"), rs.getString("staff_name"), 1), LocalDateTime.now());
+    }
+
+    /** 查询当前居民的预约，供居民门户与业务中心共享同一事实来源。 */
+    @Transactional(readOnly = true)
+    public List<ScheduledAppointmentView> residentAppointments(long patientId) {
+        return appointmentViews("where a.patient_id=?", patientId);
+    }
+
+    /** 查询当前工作人员可办理的预约；医生仅看本人排班，其他岗位按有效站点任职过滤。 */
+    @Transactional(readOnly = true)
+    public List<ScheduledAppointmentView> staffAppointments(long staffId, boolean ownScheduleOnly) {
+        if (ownScheduleOnly) return appointmentViews("where ss.staff_profile_id=?", staffId);
+        return appointmentViews("where exists (select 1 from staff_site_assignment sa "
+                + "where sa.staff_profile_id=? and sa.site_id=ss.site_id and sa.active=true "
+                + "and sa.valid_from<=current_timestamp and (sa.valid_to is null or sa.valid_to>current_timestamp))", staffId);
+    }
+
+    /** 返回当前工作人员范围内的候诊队列，前端直接选择记录办理，无需手工输入预约编号。 */
+    @Transactional(readOnly = true)
+    public List<QueueView> staffQueue(long staffId, boolean ownScheduleOnly) {
+        return staffAppointments(staffId, ownScheduleOnly).stream()
+                .filter(item -> "CHECKED_IN".equals(item.status()) || "IN_PROGRESS".equals(item.status()))
+                .map(item -> new QueueView(item.id(), item.id(), "Q" + item.queueNumber(), item.patientId(),
+                        item.patientName(), item.status(), item.scheduledAt(), item.queueNumber(),
+                        item.queueCreatedAt() == null ? 0 : Math.max(0,
+                                Duration.between(item.queueCreatedAt(), LocalDateTime.now()).toMinutes()),
+                        item.encounterId()))
                 .toList();
+    }
+
+    /** 返回医生本人的接诊记录，供处方等后续业务选择已签署接诊。 */
+    @Transactional(readOnly = true)
+    public List<EncounterView> staffEncounters(long staffId) {
+        return jdbc.queryForList("select id from clinical_encounter where staff_profile_id=? order by started_at desc limit 100", staffId)
+                .stream().map(row -> view(encounters.findById(((Number) row.get("id")).longValue()).orElseThrow())).toList();
+    }
+
+    private List<ScheduledAppointmentView> appointmentViews(String where, long subjectId) {
+        String sql = "select a.id,a.slot_id,a.patient_id,a.status,a.reason,a.version," +
+                "s.starts_at,s.ends_at,ss.site_id,ss.department_id,ss.staff_profile_id," +
+                "p.name patient_name,sp.name staff_name,d.name department_name," +
+                "q.queue_number,q.created_at queue_created_at,e.id encounter_id " +
+                "from sched_appointment a join sched_slot s on s.id=a.slot_id " +
+                "join sched_session ss on ss.id=s.session_id join patient p on p.id=a.patient_id " +
+                "join staff_profile sp on sp.id=ss.staff_profile_id " +
+                "left join department d on d.id=ss.department_id " +
+                "left join sched_queue_entry q on q.appointment_id=a.id " +
+                "left join clinical_encounter e on e.appointment_id=a.id " + where + " order by s.starts_at desc limit 100";
+        return jdbc.query(sql, (rs, row) -> new ScheduledAppointmentView(
+                rs.getLong("id"), rs.getLong("slot_id"), rs.getLong("patient_id"),
+                rs.getString("patient_name"), rs.getLong("staff_profile_id"), rs.getString("staff_name"),
+                rs.getLong("site_id"), rs.getLong("department_id"), rs.getString("department_name"),
+                rs.getObject("starts_at", LocalDateTime.class), rs.getObject("ends_at", LocalDateTime.class),
+                rs.getString("status"), rs.getString("reason"), rs.getLong("version"),
+                (Integer) rs.getObject("queue_number"), rs.getObject("queue_created_at", LocalDateTime.class),
+                (Long) rs.getObject("encounter_id")), subjectId);
     }
 
     /**
@@ -205,8 +270,9 @@ public class R2ClinicalApplicationService {
         String immutableDocument = immutableDocument(note.body, encounterDiagnoses);
         documentVersions.save(new ClinicalDocumentVersionEntity(encounter.id, immutableDocument,
                 sha256(immutableDocument), doctorStaffId));
-        jdbc.update("insert into audit_event(occurred_at,actor,actor_role,action,resource_type,resource_id,outcome,purpose,details_json,correlation_id) values(current_timestamp,?,?,?,?,?,'SUCCESS','CLINICAL_CARE','{}',null)",
-                actor, "DOCTOR", "ENCOUNTER_SIGNED", "CLINICAL_ENCOUNTER", String.valueOf(encounter.id));
+        jdbc.update("insert into audit_event(occurred_at,actor,actor_role,action,resource_type,resource_id,outcome,purpose,details_json,correlation_id) values(current_timestamp,?,?,?,?,?,'SUCCESS','CLINICAL_CARE','{}',?)",
+                actor, "DOCTOR", "ENCOUNTER_SIGNED", "CLINICAL_ENCOUNTER", String.valueOf(encounter.id),
+                RequestCorrelationFilter.current());
         encounters.saveAndFlush(encounter);
         appointments.saveAndFlush(appointment);
         return view(encounter);
@@ -310,11 +376,24 @@ public class R2ClinicalApplicationService {
     public record SessionView(long id, long staffProfileId, List<Long> slotIds, long version) {}
     /** 居民可见号源视图。 */
     public record SlotView(long id, long sessionId, LocalDateTime startsAt, LocalDateTime endsAt,
-                           String status, long version) {}
+                           String status, long version, long siteId, long departmentId,
+                           String departmentName, long staffProfileId, String staffName, int remaining) {}
     /** 预约号源命令。 */
     public record BookAppointmentCommand(long slotId, String reason) {}
     /** 预约状态视图。 */
     public record AppointmentView(long id, long slotId, long patientId, String status, String reason, long version) {}
+    /** 门户展示使用的预约视图，包含排班、居民、医护和候诊关联信息。 */
+    public record ScheduledAppointmentView(long id, long slotId, long patientId, String patientName,
+                                           long staffProfileId, String staffName, long siteId,
+                                           long departmentId, String departmentName,
+                                           LocalDateTime scheduledAt, LocalDateTime endsAt,
+                                           String status, String reason, long version,
+                                           Integer queueNumber, LocalDateTime queueCreatedAt,
+                                           Long encounterId) {}
+    /** 候诊队列视图。 */
+    public record QueueView(long id, long appointmentId, String ticketNo, long patientId,
+                            String residentName, String status, LocalDateTime scheduledAt,
+                            Integer queueNumber, long waitingMinutes, Long encounterId) {}
     /** 预约结果，{@code replay} 表示响应来自幂等重放。 */
     public record BookingResult(AppointmentView appointment, boolean replay) {}
     /** 保存病历草稿命令。 */

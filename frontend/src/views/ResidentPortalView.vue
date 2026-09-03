@@ -26,8 +26,7 @@ import { http, type PageResult } from '../api/http'
 import { logout } from '../auth'
 import { hasBloodPressureRecordedToday, mapTrendValue, measurementStatus, splitRecordedSeries } from '../features/resident/health-presentation'
 import { portalConfig } from '../config/portal-config'
-import { ResidentPortalControllerService, type ResidentAppointmentRequest } from '../api/generated'
-import { generatedApiErrorMessage } from '../api/generated-client'
+import { platformApi, type ScheduledAppointmentItem } from '../api/platform'
 import {
   createModuleStates,
   failedModuleNames,
@@ -37,7 +36,7 @@ import {
 } from '../features/portal/module-state'
 
 type PortalSection = 'overview' | 'appointments' | 'health' | 'chronic' | 'profile'
-type AppointmentStatus = 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
+type AppointmentStatus = ScheduledAppointmentItem['status']
 
 interface ResidentProfile {
   id?: number
@@ -59,15 +58,7 @@ interface Doctor {
   phone?: string
 }
 
-interface Appointment {
-  id: number
-  appointmentNo?: string
-  doctorId: number
-  doctorName?: string
-  department?: string
-  scheduledAt: string
-  status: AppointmentStatus
-  reason: string
+interface Appointment extends ScheduledAppointmentItem {
   remark?: string
 }
 
@@ -121,8 +112,11 @@ const navItems = [
 const statusMeta: Record<AppointmentStatus, { label: string; tone: string }> = {
   PENDING: { label: '待确认', tone: 'amber' },
   CONFIRMED: { label: '已确认', tone: 'green' },
+  CHECKED_IN: { label: '已签到', tone: 'green' },
+  IN_PROGRESS: { label: '接诊中', tone: 'amber' },
   COMPLETED: { label: '已完成', tone: 'blue' },
   CANCELLED: { label: '已取消', tone: 'gray' },
+  NO_SHOW: { label: '未到诊', tone: 'gray' },
 }
 
 const activeSection = ref<PortalSection>('overview')
@@ -133,12 +127,9 @@ const loading = ref(false)
 const refreshing = ref(false)
 const portalLoadErrors = ref<string[]>([])
 const moduleStates = reactive<Record<ResidentModuleKey, PortalModuleState>>(createModuleStates(residentModuleKeys))
-const appointmentDialogVisible = ref(false)
 const healthDialogVisible = ref(false)
-const appointmentSaving = ref(false)
 const healthSaving = ref(false)
 const profileSaving = ref(false)
-const appointmentFormRef = ref<any>()
 const healthFormRef = ref<any>()
 const profileFormRef = ref<any>()
 
@@ -155,11 +146,6 @@ const profile = reactive<ResidentProfile>({
   address: '',
 })
 const profileDraft = reactive({ phone: '', address: '' })
-const appointmentForm = reactive<{ doctorId?: number; scheduledAt: string; reason: string }>({
-  doctorId: undefined,
-  scheduledAt: '',
-  reason: '',
-})
 const healthForm = reactive<{
   systolicPressure?: number
   diastolicPressure?: number
@@ -169,14 +155,6 @@ const healthForm = reactive<{
   note: string
 }>({ note: '' })
 
-const appointmentRules = {
-  doctorId: [{ required: true, message: '请选择接诊医生', trigger: 'change' }],
-  scheduledAt: [{ required: true, message: '请选择预约时间', trigger: 'change' }],
-  reason: [
-    { required: true, message: '请简要填写就诊原因', trigger: 'blur' },
-    { min: 2, max: 500, message: '就诊原因应为 2 至 500 个字符', trigger: 'blur' },
-  ],
-}
 const healthRules = {
   systolicPressure: [{ required: true, message: '请填写收缩压', trigger: 'blur' }],
   diastolicPressure: [{ required: true, message: '请填写舒张压', trigger: 'blur' }],
@@ -234,7 +212,7 @@ function formatRecordTime(value?: string) {
 }
 
 function getDoctorName(appointment: Appointment) {
-  return appointment.doctorName || doctors.value.find(item => item.id === appointment.doctorId)?.name || `医生 ${appointment.doctorId}`
+  return appointment.staffName || appointment.doctorName || doctors.value.find(item => item.id === appointment.doctorId)?.name || '社区医生'
 }
 
 function getPlanDoctor(plan: ChronicPlan) {
@@ -357,10 +335,7 @@ function goTo(section: PortalSection) {
 }
 
 function openAppointmentDialog() {
-  appointmentForm.doctorId = undefined
-  appointmentForm.scheduledAt = ''
-  appointmentForm.reason = ''
-  appointmentDialogVisible.value = true
+  void router.push('/resident/services')
 }
 
 function openHealthDialog() {
@@ -391,7 +366,7 @@ async function loadPortal(showSuccess = false) {
     const results = await Promise.allSettled([
       http.get<ResidentOverview>('/resident/overview'),
       http.get<ResidentProfile>('/resident/profile'),
-      http.get<Appointment[] | ListPayload<Appointment>>('/resident/appointments'),
+      platformApi.listResidentAppointments(),
       http.get<HealthRecord[] | ListPayload<HealthRecord>>('/resident/health-records'),
       http.get<ChronicPlan[] | ListPayload<ChronicPlan>>('/resident/chronic-plans'),
       http.get<Doctor[] | ListPayload<Doctor>>('/resident/doctors'),
@@ -431,35 +406,13 @@ async function loadPortal(showSuccess = false) {
   }
 }
 
-async function submitAppointment() {
-  if (!(await appointmentFormRef.value?.validate())) return
-  appointmentSaving.value = true
-  try {
-    const requestBody: ResidentAppointmentRequest = {
-      doctorId: appointmentForm.doctorId!,
-      scheduledAt: appointmentForm.scheduledAt,
-      reason: appointmentForm.reason.trim(),
-    }
-    await ResidentPortalControllerService.createAppointment({ requestBody })
-    ElMessage.success('预约申请已提交，请留意确认结果')
-    appointmentDialogVisible.value = false
-    const { data } = await http.get<Appointment[] | ListPayload<Appointment>>('/resident/appointments')
-    appointments.value = normalizeList(data)
-    activeSection.value = 'appointments'
-  } catch (error) {
-    ElMessage.error(generatedApiErrorMessage(error))
-  } finally {
-    appointmentSaving.value = false
-  }
-}
-
 async function cancelAppointment(item: Appointment) {
   await ElMessageBox.confirm(
     `确定取消 ${formatDateTime(item.scheduledAt)} 与${getDoctorName(item)}的预约吗？`,
     '取消预约',
     { confirmButtonText: '确认取消', cancelButtonText: '保留预约', type: 'warning' },
   )
-  await http.patch(`/resident/appointments/${item.id}/cancel`)
+  await platformApi.cancelResidentAppointment(item.id)
   item.status = 'CANCELLED'
   ElMessage.success('预约已取消')
 }
@@ -657,7 +610,7 @@ async function signOut() { await logout(); await router.replace({ path: '/login'
             <article v-for="item in sortedAppointments" :key="item.id" class="appointment-row">
               <div class="date-block"><strong>{{ parseDate(item.scheduledAt)?.getDate() }}</strong><span>{{ (parseDate(item.scheduledAt)?.getMonth() ?? 0) + 1 }} 月</span></div>
               <span class="doctor-avatar"><el-icon><FirstAidKit /></el-icon></span>
-              <div class="appointment-main"><div><h4>{{ getDoctorName(item) }}</h4><span class="status-pill" :class="statusMeta[item.status].tone">{{ statusMeta[item.status].label }}</span></div><p>{{ item.department || '社区门诊' }} · {{ item.reason }}</p><span><el-icon><Clock /></el-icon>{{ formatDateTime(item.scheduledAt) }}<i>·</i>预约号 {{ item.appointmentNo || '--' }}</span></div>
+              <div class="appointment-main"><div><h4>{{ getDoctorName(item) }}</h4><span class="status-pill" :class="statusMeta[item.status].tone">{{ statusMeta[item.status].label }}</span></div><p>{{ item.departmentName || item.department || '社区门诊' }} · {{ item.reason }}</p><span><el-icon><Clock /></el-icon>{{ formatDateTime(item.scheduledAt) }}<i>·</i>预约号 {{ item.appointmentNo || item.id }}</span></div>
               <el-button v-if="item.status === 'PENDING' || item.status === 'CONFIRMED'" type="danger" plain @click="cancelAppointment(item)">取消预约</el-button>
             </article>
           </div>
@@ -751,16 +704,6 @@ async function signOut() { await logout(); await router.replace({ path: '/login'
     <div class="mobile-nav" aria-label="居民门户移动导航">
       <button v-for="item in navItems" :key="item.key" type="button" :class="{ active: activeSection === item.key }" @click="goTo(item.key)"><el-icon><component :is="item.icon" /></el-icon><span>{{ item.label.replace('健康', '') || '健康' }}</span></button>
     </div>
-
-    <el-dialog v-model="appointmentDialogVisible" title="预约社区门诊" width="560px" class="portal-dialog" destroy-on-close>
-      <div class="dialog-intro"><span class="card-icon mint"><el-icon><Calendar /></el-icon></span><div><b>选择方便的就诊时间</b><p>提交后由社区医护人员确认，请留意预约状态。</p></div></div>
-      <el-form ref="appointmentFormRef" :model="appointmentForm" :rules="appointmentRules" label-position="top">
-        <el-form-item label="接诊医生" prop="doctorId"><el-select v-model="appointmentForm.doctorId" placeholder="请选择医生" filterable style="width: 100%"><el-option v-for="doctor in doctors" :key="doctor.id" :value="doctor.id" :label="`${doctor.name} · ${doctor.department || doctor.specialty || '社区门诊'}`"><div class="doctor-option"><span>{{ doctor.name }}<small>{{ doctor.title || '社区医生' }}</small></span><i>{{ doctor.department || doctor.specialty || '社区门诊' }}</i></div></el-option></el-select></el-form-item>
-        <el-form-item label="预约时间" prop="scheduledAt"><el-date-picker v-model="appointmentForm.scheduledAt" type="datetime" value-format="YYYY-MM-DDTHH:mm:ss" format="YYYY年MM月DD日 HH:mm" placeholder="请选择日期和时间" style="width: 100%" /></el-form-item>
-        <el-form-item label="就诊原因" prop="reason"><el-input v-model="appointmentForm.reason" type="textarea" :rows="4" maxlength="500" show-word-limit placeholder="例如：近期血压偏高，希望复诊调整用药" /></el-form-item>
-      </el-form>
-      <template #footer><el-button @click="appointmentDialogVisible = false">暂不预约</el-button><el-button type="primary" :loading="appointmentSaving" @click="submitAppointment">提交预约</el-button></template>
-    </el-dialog>
 
     <el-dialog v-model="healthDialogVisible" title="上报健康指标" width="620px" class="portal-dialog" destroy-on-close>
       <div class="dialog-intro"><span class="card-icon coral"><el-icon><TrendCharts /></el-icon></span><div><b>记录本次居家测量</b><p>请填写真实测量结果，血压为必填项。</p></div></div>

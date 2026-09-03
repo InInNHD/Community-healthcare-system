@@ -110,22 +110,41 @@ class ClinicalDataInitializer implements CommandLineRunner {
         Long organizationId = jdbc.queryForObject("select id from organization where code='DEMO-ORG'", Long.class);
         jdbc.update("insert into site(organization_id,code,name,site_type,active,created_at,updated_at,version) values(?,'DEMO-SITE','演示服务站','CENTER',true,?,?,0)", organizationId, now, now);
         Long siteId = jdbc.queryForObject("select id from site where code='DEMO-SITE'", Long.class);
-        Long doctorProfileId = seedStaffProfile(organizationId, siteId, doctor, "DOCTOR", now);
-        Long nurseProfileId = seedStaffProfile(organizationId, siteId, nurse, "NURSE", now);
+        jdbc.update("insert into department(organization_id,site_id,code,name,active,created_at,updated_at,version) values(?,?, 'DEMO-GP','全科医学科',true,?,?,0)",
+                organizationId, siteId, now, now);
+        Long departmentId = jdbc.queryForObject("select id from department where code='DEMO-GP'", Long.class);
+        Long doctorProfileId = seedStaffProfile(organizationId, siteId, departmentId, doctor, "DOCTOR", now);
+        Long nurseProfileId = seedStaffProfile(organizationId, siteId, null, nurse, "NURSE", now);
         for (Patient patient : enrolledPatients) {
             jdbc.update("insert into patient_site_enrollment(patient_id,site_id,enrolled_at,active,created_at) values(?,?,?,true,?)",
                     patient.getId(), siteId, now, now);
         }
         jdbc.update("update app_user set staff_profile_id=? where username='doctor'", doctorProfileId);
         jdbc.update("update app_user set staff_profile_id=? where username='nurse'", nurseProfileId);
+        seedSchedulingDemo(siteId, departmentId, doctorProfileId, enrolledPatients[0].getId());
     }
 
-    private Long seedStaffProfile(Long organizationId, Long siteId, Doctor staff, String role, Instant now) {
+    private Long seedStaffProfile(Long organizationId, Long siteId, Long departmentId,
+                                  Doctor staff, String role, Instant now) {
         jdbc.update("insert into staff_profile(organization_id,staff_no,name,staff_type,account_status,active,created_at,updated_at,version) values(?,?,?,?, 'ACTIVE',true,?,?,0)",
                 organizationId, staff.getEmployeeNo(), staff.getName(), role, now, now);
         Long profileId = jdbc.queryForObject("select id from staff_profile where staff_no=?", Long.class, staff.getEmployeeNo());
-        jdbc.update("insert into staff_site_assignment(staff_profile_id,site_id,role_code,valid_from,active,created_at) values(?,?,?,?,true,?)",
-                profileId, siteId, role, now, now);
+        jdbc.update("insert into staff_site_assignment(staff_profile_id,site_id,department_id,role_code,valid_from,active,created_at) values(?,?,?,?,?,true,?)",
+                profileId, siteId, departmentId, role, now, now);
         return profileId;
+    }
+
+    /** 为统一预约模型建立一条可立即办理的演示预约。 */
+    private void seedSchedulingDemo(Long siteId, Long departmentId, Long doctorProfileId, Long patientId) {
+        LocalDateTime startsAt = LocalDateTime.now().plusHours(1).withSecond(0).withNano(0);
+        LocalDateTime endsAt = startsAt.plusMinutes(30);
+        jdbc.update("insert into sched_session(site_id,department_id,staff_profile_id,service_date,starts_at,ends_at,status,created_at,updated_at,version) values(?,?,?,?,?,?,'OPEN',current_timestamp,current_timestamp,0)",
+                siteId, departmentId, doctorProfileId, startsAt.toLocalDate(), startsAt, endsAt);
+        Long sessionId = jdbc.queryForObject("select max(id) from sched_session where staff_profile_id=?", Long.class, doctorProfileId);
+        jdbc.update("insert into sched_slot(session_id,starts_at,ends_at,status,created_at,updated_at,version) values(?,?,?,'RESERVED',current_timestamp,current_timestamp,0)",
+                sessionId, startsAt, endsAt);
+        Long slotId = jdbc.queryForObject("select max(id) from sched_slot where session_id=?", Long.class, sessionId);
+        jdbc.update("insert into sched_appointment(slot_id,patient_id,status,reason,created_at,updated_at,version) values(?,?,'CONFIRMED','高血压复诊',current_timestamp,current_timestamp,0)",
+                slotId, patientId);
     }
 }

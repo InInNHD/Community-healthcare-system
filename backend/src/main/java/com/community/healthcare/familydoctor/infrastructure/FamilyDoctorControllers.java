@@ -14,6 +14,7 @@ import java.util.Map;
 @RestController @RequestMapping("/api/v1/admin/family-doctor")
 class FamilyDoctorAdminController{
  private final FamilyDoctorApplicationService s; FamilyDoctorAdminController(FamilyDoctorApplicationService s){this.s=s;}
+ @GetMapping("/catalog") List<Map<String,Object>> catalog(){return s.adminCatalog();}
  @PostMapping("/teams") @ResponseStatus(HttpStatus.CREATED) Map<String,Object> team(@RequestBody Team r){return s.createTeam(r.organizationId(),r.siteId(),r.code(),r.name());}
  @PostMapping("/teams/{id}/members") @ResponseStatus(HttpStatus.CREATED) Map<String,Object> member(@PathVariable long id,@RequestBody Member r){return s.addMember(id,r.staffId(),r.role());}
  @PostMapping("/packages") @ResponseStatus(HttpStatus.CREATED) Map<String,Object> pack(@RequestBody Pack r){return s.createPackage(r.organizationId(),r.code(),r.name(),r.versionNo(),r.effectiveFrom(),r.items());}
@@ -29,6 +30,7 @@ class FamilyDoctorAdminController{
 @PreAuthorize("hasAnyRole('DOCTOR','NURSE')")
 class FamilyDoctorStaffController{
  private final FamilyDoctorApplicationService s; FamilyDoctorStaffController(FamilyDoctorApplicationService s){this.s=s;}
+ @GetMapping("/tasks") List<Map<String,Object>> tasks(@AuthenticationPrincipal Jwt j){return s.staffTasks(staff(j));}
  @PostMapping("/contracts") @ResponseStatus(HttpStatus.CREATED) Map<String,Object> contract(@AuthenticationPrincipal Jwt j,@RequestHeader("Idempotency-Key")String k,@RequestBody Contract r){return s.createContract(staff(j),k,new FamilyDoctorApplicationService.ContractCommand(r.patientId(),r.teamId(),r.packageId(),r.startsOn(),r.endsOn()));}
  @PostMapping("/contracts/{id}/submit") Map<String,Object> submit(@AuthenticationPrincipal Jwt j,@PathVariable long id,@RequestHeader("Idempotency-Key")String k){return s.submit(staff(j),id,k);}
  @PostMapping("/tasks") @ResponseStatus(HttpStatus.CREATED) Map<String,Object> task(@AuthenticationPrincipal Jwt j,@RequestHeader("Idempotency-Key")String k,@RequestBody Task r){return s.createTask(staff(j),k,new FamilyDoctorApplicationService.TaskCommand(r.contractId(),r.taskType(),r.sourceType(),r.sourceId(),r.dueAt()));}

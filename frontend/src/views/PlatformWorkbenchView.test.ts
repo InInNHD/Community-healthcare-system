@@ -2,7 +2,8 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import PlatformWorkbenchView from './PlatformWorkbenchView.vue'
 
-const { startEncounter, saveEncounterDraft, signEncounter } = vi.hoisted(() => ({
+const { listStaffQueue, startEncounter, saveEncounterDraft, signEncounter } = vi.hoisted(() => ({
+  listStaffQueue: vi.fn(),
   startEncounter: vi.fn(),
   saveEncounterDraft: vi.fn(),
   signEncounter: vi.fn(),
@@ -14,6 +15,7 @@ vi.mock('../auth', () => ({
 
 vi.mock('../api/platform', () => ({
   platformApi: {
+    listStaffQueue,
     startEncounter,
     saveEncounterDraft,
     signEncounter,
@@ -27,6 +29,7 @@ vi.mock('element-plus', () => ({
 describe('PlatformWorkbenchView encounter workflow', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    listStaffQueue.mockResolvedValue({ data: [{ id: 9, appointmentId: 41, residentName: '张居民', status: 'CHECKED_IN' }] })
     startEncounter.mockResolvedValue({ data: { id: 77, version: 3, status: 'DRAFT' } })
     saveEncounterDraft.mockResolvedValue({ data: { id: 77, version: 4, status: 'DRAFT' } })
     signEncounter.mockResolvedValue({ data: { id: 77, version: 5, status: 'SIGNED' } })
@@ -39,7 +42,6 @@ describe('PlatformWorkbenchView encounter workflow', () => {
     })
     await flushPromises()
 
-    await wrapper.get('input[type="number"]').setValue(41)
     await wrapper.get('textarea').setValue('头晕，血压 146/92mmHg')
     await wrapper.get('form').trigger('submit')
     await flushPromises()

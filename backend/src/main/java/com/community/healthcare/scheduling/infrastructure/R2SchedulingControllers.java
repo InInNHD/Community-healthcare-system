@@ -19,6 +19,10 @@ class ResidentSchedulingController {
     ResidentSchedulingController(R2ClinicalApplicationService service) { this.service = service; }
     /** 查询仍可预约且尚未开始的号源。 */
     @GetMapping("/slots") List<SlotView> slots() { return service.availableSlots(); }
+    /** 查询当前居民全部预约。 */
+    @GetMapping("/appointments") List<ScheduledAppointmentView> appointments(@AuthenticationPrincipal Jwt jwt) {
+        return service.residentAppointments(claim(jwt, "patientId"));
+    }
 
     /**
      * 为当前居民预约号源。
@@ -51,6 +55,14 @@ class ResidentSchedulingController {
 class StaffSchedulingController {
     private final R2ClinicalApplicationService service;
     StaffSchedulingController(R2ClinicalApplicationService service) { this.service = service; }
+    /** 查询当前岗位可办理的预约。 */
+    @GetMapping("/appointments") List<ScheduledAppointmentView> appointments(@AuthenticationPrincipal Jwt jwt) {
+        return service.staffAppointments(staff(jwt), hasRole(jwt, "DOCTOR"));
+    }
+    /** 查询已签到或接诊中的候诊队列。 */
+    @GetMapping("/queue") List<QueueView> queue(@AuthenticationPrincipal Jwt jwt) {
+        return service.staffQueue(staff(jwt), hasRole(jwt, "DOCTOR"));
+    }
     /** 医生在有效任职站点和科室内创建未来排班及其号源。 */
     @PostMapping("/sessions") @ResponseStatus(HttpStatus.CREATED) @PreAuthorize("hasRole('DOCTOR')")
     SessionView open(@AuthenticationPrincipal Jwt jwt, @Valid @RequestBody SessionRequest r) {
@@ -70,6 +82,10 @@ class StaffSchedulingController {
         Object value = jwt.getClaim("staffProfileId");
         return value instanceof Number n ? n.longValue() : ResidentSchedulingController.claim(jwt, "staffId");
     }
+    private static boolean hasRole(Jwt jwt, String role) {
+        Object roles = jwt.getClaim("roles");
+        return roles instanceof List<?> values && values.contains(role);
+    }
 }
 
 /** 医生端病历草稿、诊断和签署入口。 */
@@ -77,6 +93,11 @@ class StaffSchedulingController {
 class StaffEncounterController {
     private final R2ClinicalApplicationService service;
     StaffEncounterController(R2ClinicalApplicationService service) { this.service = service; }
+    /** 查询医生本人的接诊记录。 */
+    @GetMapping @PreAuthorize("hasRole('DOCTOR')")
+    List<EncounterView> encounters(@AuthenticationPrincipal Jwt jwt) {
+        return service.staffEncounters(StaffSchedulingController.staff(jwt));
+    }
     /** 保存本人接诊记录的 SOAP 草稿，并校验客户端乐观锁版本。 */
     @PutMapping("/{id}/draft") @PreAuthorize("hasRole('DOCTOR')")
     EncounterView draft(@AuthenticationPrincipal Jwt jwt, @PathVariable long id, @Valid @RequestBody DraftRequest r) {

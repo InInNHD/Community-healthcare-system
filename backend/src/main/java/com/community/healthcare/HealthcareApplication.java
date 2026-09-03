@@ -2,6 +2,7 @@ package com.community.healthcare;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * 社区医疗后端的 Spring Boot 启动入口。
@@ -10,6 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * 但通过包边界和应用服务维持模块化单体结构。</p>
  */
 @SpringBootApplication
+@EnableScheduling
 public class HealthcareApplication {
     /**
      * 启动 Web 应用并加载当前激活 Profile 的配置。
