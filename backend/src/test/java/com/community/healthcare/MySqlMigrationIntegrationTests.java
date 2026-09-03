@@ -41,7 +41,8 @@ class MySqlMigrationIntegrationTests {
                                      'patient_access_grant', 'audit_event')
                 """, Integer.class);
 
-        assertThat(successfulMigrations).isEqualTo(7);
+        // 正式空库当前由 V1-V11 完整构建，新增业务模块后同步更新迁移门禁。
+        assertThat(successfulMigrations).isEqualTo(11);
         assertThat(coreTables).isEqualTo(17);
     }
 }
