@@ -48,6 +48,19 @@ class DemoProfileSecurityIntegrationTests {
     }
 
     @Test
+    void pharmacyAndRegistrationDemoAccountsReachTheirOwnWorkQueues() throws Exception {
+        String pharmacist = loginToken("pharmacist", "Pharmacist@123456", "staff");
+        String registrar = loginToken("registrar", "Registrar@123456", "staff");
+
+        mvc.perform(get("/api/v1/staff/pharmacy/prescriptions")
+                        .header("Authorization", "Bearer " + pharmacist))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/v1/staff/billing/invoices")
+                        .header("Authorization", "Bearer " + registrar))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void staleAccessCookieDoesNotBlockFreshLogin() throws Exception {
         mvc.perform(post("/api/auth/login")
                         .cookie(new Cookie("healthcare_access", "stale-invalid-token"))

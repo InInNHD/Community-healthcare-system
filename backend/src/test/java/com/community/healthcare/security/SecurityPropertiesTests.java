@@ -115,7 +115,7 @@ class SecurityPropertiesTests {
                 new SecurityProperties.Password(12, 12, 128, true, true, true, true),
                 new SecurityProperties.Mfa(false, Duration.ofMinutes(5),
                         "test-mfa-encryption-key-with-at-least-32-bytes"),
-                new SecurityProperties.Bootstrap(false, true, null, null, null, null),
+                new SecurityProperties.Bootstrap(false, true, null, null, null, null, null, null),
                 new SecurityProperties.Cors(List.of("http://localhost:*")));
     }
 

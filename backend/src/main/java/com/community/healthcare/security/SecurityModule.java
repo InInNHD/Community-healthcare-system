@@ -537,7 +537,7 @@ class AuthController {
     @PostMapping("/login")
     org.springframework.http.ResponseEntity<?> login(@Valid @RequestBody LoginRequest request,
                                                       jakarta.servlet.http.HttpServletRequest servletRequest) {
-        String source = servletRequest.getRemoteAddr();
+        String source = clientAddress(servletRequest);
         loginGuard.check(request.username(), source);
         try {
             Authentication authentication = authenticationManager.authenticate(
@@ -593,6 +593,16 @@ class AuthController {
     private Long numberClaim(Jwt jwt, String name) {
         Object value = jwt.getClaim(name);
         return value instanceof Number number ? number.longValue() : null;
+    }
+
+    /** 仅在请求确实来自本机反向代理时接受其写入的客户端地址，避免直接伪造转发头绕过限流。 */
+    private String clientAddress(jakarta.servlet.http.HttpServletRequest request) {
+        String remote = request.getRemoteAddr();
+        if (("127.0.0.1".equals(remote) || "::1".equals(remote))) {
+            String forwarded = request.getHeader("X-Real-IP");
+            if (forwarded != null && forwarded.matches("[0-9A-Fa-f:.]{3,45}")) return forwarded;
+        }
+        return remote;
     }
 
     private org.springframework.http.ResponseEntity<LoginResponse> authenticated(LoginResponse login) {

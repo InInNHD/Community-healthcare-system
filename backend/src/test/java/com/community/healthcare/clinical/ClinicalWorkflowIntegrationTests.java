@@ -22,7 +22,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -49,6 +49,7 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppC
         "spring.datasource.url=jdbc:h2:mem:clinical-workflow;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=0")
 @ActiveProfiles("demo")
 class ClinicalWorkflowIntegrationTests {
+    private static final AtomicInteger FIXTURE_SEQUENCE = new AtomicInteger();
     @Autowired WebApplicationContext context;
     @Autowired ObjectMapper objectMapper;
     @Autowired JdbcTemplate jdbc;
@@ -598,7 +599,8 @@ class ClinicalWorkflowIntegrationTests {
     }
 
     private String suffix() {
-        return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        // NATIONAL_ID 规范化会移除字母；使用纯数字序列，确保脱敏后的末四位也不碰撞。
+        return String.format("%012d", FIXTURE_SEQUENCE.incrementAndGet());
     }
 
     private record PortalSession(String token, Long patientId, Long staffId) {}

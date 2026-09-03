@@ -20,6 +20,12 @@ const demoAccounts = demoMode ? {
   staff: { username: 'doctor', password: 'Doctor@123456' },
   resident: { username: 'resident', password: 'Resident@123456' },
 } : null
+const staffDemoAccounts = [
+  { username: 'doctor', password: 'Doctor@123456', label: '医生' },
+  { username: 'nurse', password: 'Nurse@123456', label: '护士' },
+  { username: 'pharmacist', password: 'Pharmacist@123456', label: '药师' },
+  { username: 'registrar', password: 'Registrar@123456', label: '挂号收费' },
+]
 const allPortals = [
   { value: 'admin' as const, label: '管理端', hint: '全局运营与配置', icon: Management },
   { value: 'staff' as const, label: '医护端', hint: '诊疗、随访与处置', icon: FirstAidKit },
@@ -33,6 +39,12 @@ function choosePortal(portal: typeof portals[number]) {
   const demoAccount = demoAccounts?.[portal.value]
   form.username = demoAccount?.username ?? ''
   form.password = demoAccount?.password ?? ''
+}
+function chooseStaffAccount(username: string) {
+  const account = staffDemoAccounts.find(item => item.username === username)
+  if (!account) return
+  form.username = account.username
+  form.password = account.password
 }
 onMounted(() => {
   const requested = portals.find(item => item.value === route.query.portal)
@@ -74,6 +86,9 @@ async function submit() {
             <el-icon><component :is="portal.icon" /></el-icon><span><b>{{ portal.label }}</b><small>{{ portal.hint }}</small></span>
           </button>
         </div>
+        <div v-if="demoMode && !challengeToken && form.portal === 'staff'" class="demo-role-options" aria-label="医护演示岗位">
+          <button v-for="account in staffDemoAccounts" :key="account.username" type="button" :class="{ active: form.username === account.username }" @click="chooseStaffAccount(account.username)">{{ account.label }}</button>
+        </div>
         <el-form v-if="!challengeToken" :model="form" size="large" @submit.prevent="submit">
           <el-form-item><el-input v-model="form.username" aria-label="用户名" autocomplete="username" placeholder="用户名" :prefix-icon="User" /></el-form-item>
           <el-form-item><el-input v-model="form.password" aria-label="密码" autocomplete="current-password" type="password" show-password placeholder="密码" :prefix-icon="Lock" @keyup.enter="submit" /></el-form-item>
@@ -93,5 +108,5 @@ async function submit() {
 </template>
 
 <style scoped>
-.login-page{min-height:100vh;display:grid;grid-template-columns:1.08fr .92fr;background:#fff}.login-story{position:relative;overflow:hidden;padding:48px 64px;color:white;background:linear-gradient(145deg,rgba(5,75,72,.96),rgba(6,105,98,.9)),radial-gradient(circle at 80% 20%,#49b8a7,transparent 40%)}.login-story:after{content:"";position:absolute;width:500px;height:500px;right:-170px;bottom:-210px;border:1px solid rgba(255,255,255,.16);border-radius:50%;box-shadow:0 0 0 70px rgba(255,255,255,.035),0 0 0 140px rgba(255,255,255,.025)}.story-top{display:flex;align-items:center;gap:12px;font-size:18px}.story-logo{width:40px;height:40px;display:grid;place-items:center;border-radius:13px;background:#e0f7ef;color:#09645f;font-size:24px}.story-copy{position:relative;z-index:1;margin-top:20vh;max-width:650px}.kicker{color:#8fd5cc;font-size:12px;letter-spacing:.18em}.story-copy h1{margin:18px 0 24px;font-size:48px;line-height:1.28;letter-spacing:-.04em}.story-copy p{max-width:560px;color:#c5e0dd;font-size:16px;line-height:1.9}.story-metrics{position:absolute;z-index:1;left:64px;bottom:50px;display:flex;gap:54px}.story-metrics b,.story-metrics span{display:block}.story-metrics b{font-size:20px}.story-metrics span{margin-top:5px;color:#9bc9c4;font-size:12px}.login-panel{position:relative;display:grid;place-items:center;padding:32px}.login-box{width:430px}.welcome{color:#0b746e;font-weight:700}.login-box h2{margin:8px 0 6px;font-size:31px;color:#173a38}.login-box>p{margin:0 0 20px;color:#526966}.portal-options{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}.portal-options button{padding:12px 8px;display:flex;align-items:center;gap:8px;text-align:left;border:1px solid #dfe9e7;border-radius:12px;color:#5c7370;background:#fff;cursor:pointer;transition:.18s}.portal-options button:hover{border-color:#77b5ae}.portal-options button.active{border-color:#0b746e;color:#075a56;background:#eaf7f3;box-shadow:0 0 0 2px rgba(11,116,110,.09)}.portal-options .el-icon{font-size:20px;flex:none}.portal-options b,.portal-options small{display:block;white-space:nowrap}.portal-options b{font-size:13px}.portal-options small{margin-top:3px;color:#526966;font-size:9px}.login-box :deep(.el-input__wrapper){height:48px;border-radius:12px;box-shadow:0 0 0 1px #dfe9e7 inset}.login-button{width:100%;height:48px;margin-top:6px;border-radius:12px;font-weight:700}.demo-tip{margin-top:18px;padding:12px 14px;display:flex;justify-content:space-between;border-radius:12px;color:#3f5b57;background:#f1f7f5;font-size:12px}.copyright{position:absolute;bottom:22px;color:#526966}@media(max-width:900px){.login-page{display:block}.login-story{display:none}.login-panel{min-height:100vh;padding:24px}.login-box{width:min(430px,100%)}.copyright{position:static;margin-top:28px}}
+.login-page{min-height:100vh;display:grid;grid-template-columns:1.08fr .92fr;background:#fff}.login-story{position:relative;overflow:hidden;padding:48px 64px;color:white;background:linear-gradient(145deg,rgba(5,75,72,.96),rgba(6,105,98,.9)),radial-gradient(circle at 80% 20%,#49b8a7,transparent 40%)}.login-story:after{content:"";position:absolute;width:500px;height:500px;right:-170px;bottom:-210px;border:1px solid rgba(255,255,255,.16);border-radius:50%;box-shadow:0 0 0 70px rgba(255,255,255,.035),0 0 0 140px rgba(255,255,255,.025)}.story-top{display:flex;align-items:center;gap:12px;font-size:18px}.story-logo{width:40px;height:40px;display:grid;place-items:center;border-radius:13px;background:#e0f7ef;color:#09645f;font-size:24px}.story-copy{position:relative;z-index:1;margin-top:20vh;max-width:650px}.kicker{color:#8fd5cc;font-size:12px;letter-spacing:.18em}.story-copy h1{margin:18px 0 24px;font-size:48px;line-height:1.28;letter-spacing:-.04em}.story-copy p{max-width:560px;color:#c5e0dd;font-size:16px;line-height:1.9}.story-metrics{position:absolute;z-index:1;left:64px;bottom:50px;display:flex;gap:54px}.story-metrics b,.story-metrics span{display:block}.story-metrics b{font-size:20px}.story-metrics span{margin-top:5px;color:#9bc9c4;font-size:12px}.login-panel{position:relative;display:grid;place-items:center;padding:32px}.login-box{width:430px}.welcome{color:#0b746e;font-weight:700}.login-box h2{margin:8px 0 6px;font-size:31px;color:#173a38}.login-box>p{margin:0 0 20px;color:#526966}.portal-options{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}.portal-options button{padding:12px 8px;display:flex;align-items:center;gap:8px;text-align:left;border:1px solid #dfe9e7;border-radius:12px;color:#5c7370;background:#fff;cursor:pointer;transition:.18s}.portal-options button:hover{border-color:#77b5ae}.portal-options button.active{border-color:#0b746e;color:#075a56;background:#eaf7f3;box-shadow:0 0 0 2px rgba(11,116,110,.09)}.portal-options .el-icon{font-size:20px;flex:none}.portal-options b,.portal-options small{display:block;white-space:nowrap}.portal-options b{font-size:13px}.portal-options small{margin-top:3px;color:#526966;font-size:9px}.demo-role-options{margin:-10px 0 16px;display:flex;gap:6px;flex-wrap:wrap}.demo-role-options button{padding:6px 10px;border:1px solid #d4e4e1;border-radius:8px;color:#58736f;background:#fff;cursor:pointer}.demo-role-options button.active{border-color:#0b746e;color:#075a56;background:#eaf7f3}.login-box :deep(.el-input__wrapper){height:48px;border-radius:12px;box-shadow:0 0 0 1px #dfe9e7 inset}.login-button{width:100%;height:48px;margin-top:6px;border-radius:12px;font-weight:700}.demo-tip{margin-top:18px;padding:12px 14px;display:flex;justify-content:space-between;border-radius:12px;color:#3f5b57;background:#f1f7f5;font-size:12px}.copyright{position:absolute;bottom:22px;color:#526966}@media(max-width:900px){.login-page{display:block}.login-story{display:none}.login-panel{min-height:100vh;padding:24px}.login-box{width:min(430px,100%)}.copyright{position:static;margin-top:28px}}
 </style>

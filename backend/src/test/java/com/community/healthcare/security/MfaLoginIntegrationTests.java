@@ -27,6 +27,8 @@ import static org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppC
         "app.security.bootstrap.admin-password=Admin@123456",
         "app.security.bootstrap.doctor-password=Doctor@123456",
         "app.security.bootstrap.nurse-password=Nurse@123456",
+        "app.security.bootstrap.pharmacist-password=Pharmacist@123456",
+        "app.security.bootstrap.registrar-password=Registrar@123456",
         "app.security.bootstrap.resident-password=Resident@123456",
         "app.security.mfa.enabled=true",
         "app.security.mfa.encryption-key=test-mfa-encryption-key-with-at-least-32-bytes"

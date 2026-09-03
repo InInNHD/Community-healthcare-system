@@ -60,7 +60,8 @@ export async function verifyMfa(challengeToken: string, code: string) {
 export function homeForCurrentUser() {
   if (auth.user?.mustChangePassword) return '/change-password'
   if (auth.user?.roles.includes('ADMIN')) return '/admin'
-  if (auth.user?.roles.some(role => ['DOCTOR', 'NURSE', 'PHARMACIST', 'REGISTRAR'].includes(role))) return '/staff'
+  if (auth.user?.roles.some(role => ['PHARMACIST', 'REGISTRAR'].includes(role))) return '/staff/operations'
+  if (auth.user?.roles.some(role => ['DOCTOR', 'NURSE'].includes(role))) return '/staff'
   if (auth.user?.roles.includes('RESIDENT')) return '/resident'
   return '/login'
 }

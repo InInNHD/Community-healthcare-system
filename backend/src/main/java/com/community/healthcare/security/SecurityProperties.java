@@ -71,6 +71,8 @@ public record SecurityProperties(
             String adminPassword,
             String doctorPassword,
             String nursePassword,
+            String pharmacistPassword,
+            String registrarPassword,
             String residentPassword) {}
 
     /** 允许携带凭据访问后端的明确来源列表，不接受通配来源。 */
@@ -147,6 +149,8 @@ class SecurityPropertiesValidator implements InitializingBean {
         rules.requireStrong(bootstrap.adminPassword());
         rules.requireStrong(bootstrap.doctorPassword());
         rules.requireStrong(bootstrap.nursePassword());
+        rules.requireStrong(bootstrap.pharmacistPassword());
+        rules.requireStrong(bootstrap.registrarPassword());
         rules.requireStrong(bootstrap.residentPassword());
     }
 

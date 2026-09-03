@@ -53,6 +53,12 @@ class ClinicalDataInitializer implements CommandLineRunner {
         Doctor nurse = new Doctor(); nurse.setEmployeeNo("N001"); nurse.setName("刘护士"); nurse.setDepartment("社区护理科");
         nurse.setTitle("主管护师"); nurse.setSpecialty("居家护理、生命体征监测与健康宣教"); nurse.setPhone("010-88880002");
         nurse.setScheduleSummary("周一至周五 08:00-17:00"); doctors.save(nurse);
+        Doctor pharmacist = new Doctor(); pharmacist.setEmployeeNo("P001"); pharmacist.setName("赵药师"); pharmacist.setDepartment("社区药房");
+        pharmacist.setTitle("主管药师"); pharmacist.setSpecialty("处方审核、合理用药与调剂复核"); pharmacist.setPhone("010-88880003");
+        pharmacist.setScheduleSummary("周一至周五 08:00-17:00"); doctors.save(pharmacist);
+        Doctor registrar = new Doctor(); registrar.setEmployeeNo("R001"); registrar.setName("陈收费员"); registrar.setDepartment("挂号收费处");
+        registrar.setTitle("收费员"); registrar.setSpecialty("挂号、收费与医保结算"); registrar.setPhone("010-88880004");
+        registrar.setScheduleSummary("周一至周五 08:00-17:00"); doctors.save(registrar);
 
         Appointment appointment = new Appointment(); appointment.setAppointmentNo("APDEMO000001"); appointment.setPatientId(patient.getId());
         appointment.setDoctorId(doctor.getId()); appointment.setScheduledAt(LocalDateTime.now().plusHours(1));
@@ -69,9 +75,9 @@ class ClinicalDataInitializer implements CommandLineRunner {
         chronic.setRiskLevel("中风险"); chronic.setDiagnosisDate(LocalDate.now().minusYears(3)); chronic.setDoctorId(doctor.getId());
         chronic.setManagementPlan("每周监测血压，低盐饮食，每月随访"); chronicCases.save(chronic);
 
-        accounts.ensureDemoAccounts(patient.getId(), doctor.getId(), nurse.getId());
+        accounts.ensureDemoAccounts(patient.getId(), doctor.getId(), nurse.getId(), pharmacist.getId(), registrar.getId());
         ensureH2DemoScopeSchema();
-        if (r1ScopeSchemaExists()) seedStaffScope(doctor, nurse, patient, patient2);
+        if (r1ScopeSchemaExists()) seedStaffScope(doctor, nurse, pharmacist, registrar, patient, patient2);
     }
 
     /**
@@ -104,7 +110,8 @@ class ClinicalDataInitializer implements CommandLineRunner {
     }
 
     /** 将演示医护与居民绑定到同一服务站，使医护门户数据隔离规则可被真实演示。 */
-    private void seedStaffScope(Doctor doctor, Doctor nurse, Patient... enrolledPatients) {
+    private void seedStaffScope(Doctor doctor, Doctor nurse, Doctor pharmacist, Doctor registrar,
+                                Patient... enrolledPatients) {
         Instant now = Instant.now();
         jdbc.update("insert into organization(code,name,active,created_at,updated_at,version) values('DEMO-ORG','演示社区中心',true,?,?,0)", now, now);
         Long organizationId = jdbc.queryForObject("select id from organization where code='DEMO-ORG'", Long.class);
@@ -115,12 +122,16 @@ class ClinicalDataInitializer implements CommandLineRunner {
         Long departmentId = jdbc.queryForObject("select id from department where code='DEMO-GP'", Long.class);
         Long doctorProfileId = seedStaffProfile(organizationId, siteId, departmentId, doctor, "DOCTOR", now);
         Long nurseProfileId = seedStaffProfile(organizationId, siteId, null, nurse, "NURSE", now);
+        Long pharmacistProfileId = seedStaffProfile(organizationId, siteId, null, pharmacist, "PHARMACIST", now);
+        Long registrarProfileId = seedStaffProfile(organizationId, siteId, null, registrar, "REGISTRAR", now);
         for (Patient patient : enrolledPatients) {
             jdbc.update("insert into patient_site_enrollment(patient_id,site_id,enrolled_at,active,created_at) values(?,?,?,true,?)",
                     patient.getId(), siteId, now, now);
         }
         jdbc.update("update app_user set staff_profile_id=? where username='doctor'", doctorProfileId);
         jdbc.update("update app_user set staff_profile_id=? where username='nurse'", nurseProfileId);
+        jdbc.update("update app_user set staff_profile_id=? where username='pharmacist'", pharmacistProfileId);
+        jdbc.update("update app_user set staff_profile_id=? where username='registrar'", registrarProfileId);
         seedSchedulingDemo(siteId, departmentId, doctorProfileId, enrolledPatients[0].getId());
     }
 

@@ -144,7 +144,7 @@ public class R5PlatformService {
             long exchangeId=insertExchange(id,payload,write(receipt),"SENT",receipt.externalReference());
             jdbc.update("update outbox_event set status='SENT',attempts=?,processed_at=current_timestamp,last_error=null,next_attempt_at=null where id=?",attempts,id);
             if ("REFERRAL".equals(row.get("aggregate_type"))) jdbc.update("insert into referral_exchange_link(referral_id,integration_exchange_id,created_at) values(?,?,current_timestamp)",Long.parseLong((String)row.get("aggregate_id")),exchangeId);
-            audit(actor,"ADMIN","INTEGRATION_RETRIED","OUTBOX_EVENT",id,"SUCCESS","模拟适配器");
+            audit(actor,auditRole(actor),"INTEGRATION_RETRIED","OUTBOX_EVENT",id,"SUCCESS","模拟适配器");
             return new WorkbenchView(id,"SENT",attempts,receipt.externalReference(),receipt.simulation());
         } catch (RuntimeException ex) {
             insertExchange(id,payload,null,"FAILED",null);
@@ -156,7 +156,7 @@ public class R5PlatformService {
                 if (existing == 0) jdbc.update("insert into integration_dead_letter(outbox_event_id,payload_json,failure_reason,attempts,failed_at) values(?,?,?,?,current_timestamp)",id,payload,trim(ex.getMessage(),1000),attempts);
                 else jdbc.update("update integration_dead_letter set failure_reason=?,attempts=?,failed_at=current_timestamp,resolved_at=null,resolved_by=null where outbox_event_id=?",trim(ex.getMessage(),1000),attempts,id);
             }
-            audit(actor,"ADMIN","INTEGRATION_RETRIED","OUTBOX_EVENT",id,"FAILED",ex.getMessage());
+            audit(actor,auditRole(actor),"INTEGRATION_RETRIED","OUTBOX_EVENT",id,"FAILED",ex.getMessage());
             return new WorkbenchView(id,status,attempts,null,true);
         }
     }
@@ -281,6 +281,7 @@ public class R5PlatformService {
     }
     private void history(long id,ReferralStatus from,ReferralStatus to,String actorType,long actor,String note){jdbc.update("insert into referral_history(referral_id,from_status,to_status,actor_type,actor_id,note,occurred_at) values(?,?,?,?,?,?,current_timestamp)",id,from==null?null:from.name(),to.name(),actorType,actor,trim(note,1000));}
     private void audit(String actor,String role,String action,String type,Object id,String outcome,String details){jdbc.update("insert into audit_event(occurred_at,actor,actor_role,action,resource_type,resource_id,outcome,purpose,details_json,correlation_id) values(current_timestamp,?,?,?,?,?,?,?,?,?)",actor,role,action,type,String.valueOf(id),outcome,"业务办理",trim(details,2000), RequestCorrelationFilter.current());}
+    private String auditRole(String actor){return actor != null && actor.startsWith("system:") ? "SYSTEM" : "ADMIN";}
     private long insertExchange(long outbox,String request,String response,String status,String ref){KeyHolder h=insert("insert into integration_exchange(outbox_event_id,adapter_code,request_json,response_json,status,external_reference,attempted_at) values(?,'REGIONAL_MOCK',?,?,?,?,current_timestamp)",outbox,request,response,status,ref);return h.getKey().longValue();}
     private KeyHolder insert(String sql,Object...args){KeyHolder h=new GeneratedKeyHolder();jdbc.update(c->{PreparedStatement ps=c.prepareStatement(sql,Statement.RETURN_GENERATED_KEYS);for(int i=0;i<args.length;i++)ps.setObject(i+1,args[i]);return ps;},h);return h;}
     private void upsertMetric(String p,String c,BigDecimal v){int n=jdbc.update("update quality_snapshot set metric_value=?,generated_at=current_timestamp where period_key=? and metric_code=?",v,p,c);if(n==0)jdbc.update("insert into quality_snapshot(period_key,metric_code,metric_value,generated_at) values(?,?,?,current_timestamp)",p,c,v);}

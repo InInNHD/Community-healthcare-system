@@ -24,15 +24,20 @@ public class DemoAccountProvisioner {
     /**
      * 为默认演示人员建立账号与业务主体关联。
      *
-     * @param residentId 演示居民档案标识
      * @param doctorId 演示医生标识
      * @param nurseId 演示护士标识
+     * @param pharmacistId 演示药师标识
+     * @param registrarId 演示挂号收费人员标识
+     * @param residentId 演示居民档案标识
      */
-    public void ensureDemoAccounts(Long residentId, Long doctorId, Long nurseId) {
+    public void ensureDemoAccounts(Long residentId, Long doctorId, Long nurseId,
+                                   Long pharmacistId, Long registrarId) {
         SecurityProperties.Bootstrap bootstrap = properties.bootstrap();
         if (!bootstrap.enabled()) return;
         ensure("doctor", bootstrap.doctorPassword(), "王医生", AppRole.DOCTOR, doctorId, null);
         ensure("nurse", bootstrap.nursePassword(), "刘护士", AppRole.NURSE, nurseId, null);
+        ensure("pharmacist", bootstrap.pharmacistPassword(), "赵药师", AppRole.PHARMACIST, pharmacistId, null);
+        ensure("registrar", bootstrap.registrarPassword(), "陈收费员", AppRole.REGISTRAR, registrarId, null);
         ensure("resident", bootstrap.residentPassword(), "张明", AppRole.RESIDENT, null, residentId);
     }
 

@@ -145,6 +145,23 @@ class R5ReferralIntegrationTests {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void failedOutboxDeliveryBacksOffAndCreatesOnlyOneDeadLetter() {
+        String key = "failing-" + UUID.randomUUID();
+        jdbc.update("insert into outbox_event(event_key,aggregate_type,aggregate_id,event_type,payload_json,status,attempts,created_at) " +
+                "values(?,'TEST',?,'TEST_EVENT','{\"simulateFailure\":true}','PENDING',0,current_timestamp)", key, key);
+        long id = jdbc.queryForObject("select id from outbox_event where event_key=?", Long.class, key);
+
+        assertThat(referrals.retryOutbox(id,"admin").status()).isEqualTo("FAILED");
+        assertThat(referrals.retryOutbox(id,"admin").status()).isEqualTo("FAILED");
+        assertThat(referrals.retryOutbox(id,"admin").status()).isEqualTo("DEAD");
+        assertThat(referrals.retryOutbox(id,"admin").status()).isEqualTo("DEAD");
+        assertThat(jdbc.queryForObject("select count(*) from integration_dead_letter where outbox_event_id=?",
+                Integer.class,id)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("select next_attempt_at>current_timestamp from outbox_event where id=?",
+                Boolean.class,id)).isTrue();
+    }
+
     private boolean submitResult(long staff,long id,String key){try{referrals.submit(staff,id,key);return true;}catch(org.springframework.dao.OptimisticLockingFailureException ex){return false;}}
 
     private Fixture fixture() {
